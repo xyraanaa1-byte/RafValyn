@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline — RafValyn</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0a0005;
+            min-height: 100vh;
+            font-family: 'Lato', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem;
+        }
+        .content { max-width: 400px; }
+        .icon { font-size: 5rem; margin-bottom: 1.5rem; animation: float 3s ease-in-out infinite; }
+        @keyframes float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        h1 { font-family: 'Playfair Display', serif; font-size: 2rem; color: white; margin-bottom: 0.8rem; }
+        h1 span { color: #ff2d78; font-style: italic; }
+        p { color: rgba(255,255,255,0.5); line-height: 1.6; margin-bottom: 2rem; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.9rem 2rem;
+            background: linear-gradient(135deg, #ff6b9d, #ff2d78);
+            color: white; border-radius: 14px; font-weight: 700;
+            text-decoration: none; font-size: 0.95rem;
+            box-shadow: 0 8px 25px rgba(255,45,120,0.4);
+            cursor: pointer; border: none; font-family: 'Lato', sans-serif;
+            transition: all 0.3s;
+        }
+        .btn:hover { transform: translateY(-3px); }
+    </style>
+</head>
+<body>
+    <div class="content">
+        <div class="icon">📶</div>
+        <h1>Sedang <span>Offline</span></h1>
+        <p>Sepertinya koneksi internetmu terputus. Beberapa halaman masih bisa diakses dari cache.</p>
+        <button class="btn" onclick="window.location.reload()">🔄 Coba Lagi</button>
+    </div>
+</body>
+</html>

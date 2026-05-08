@@ -1,0 +1,363 @@
+{% extends 'base.html' %}
+{% block title %}Pesanan Saya — RafValyn 🌹{% endblock %}
+
+{% block extra_css %}
+<style>
+    .history-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.6rem;
+        color: var(--text);
+    }
+
+    /* Status tabs */
+    .status-tabs {
+        display: flex;
+        gap: 0;
+        margin-bottom: 1.5rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.3rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .status-tabs::-webkit-scrollbar { display: none; }
+
+    .status-tab {
+        flex-shrink: 0;
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .status-tab.active {
+        background: var(--pink);
+        color: white;
+        font-weight: 700;
+    }
+
+    .status-tab:hover:not(.active) {
+        background: rgba(255,45,120,0.1);
+        color: var(--pink);
+    }
+
+    /* Order card */
+    .order-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        margin-bottom: 1rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .order-card:hover {
+        border-color: rgba(255,45,120,0.3);
+        box-shadow: 0 8px 25px var(--pink-glow);
+    }
+
+    .order-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.2rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .order-shop {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .order-status-badge {
+        padding: 0.3rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 700;
+    }
+
+    .status-waiting { background: rgba(255,193,7,0.15); color: #ffd700; }
+    .status-packed { background: rgba(13,110,253,0.15); color: #6ea8fe; }
+    .status-on_the_way { background: rgba(255,45,120,0.15); color: var(--pink); }
+    .status-delivered { background: rgba(64,145,108,0.15); color: #40916c; }
+    .status-reviewed { background: rgba(108,117,125,0.15); color: #adb5bd; }
+
+    /* Order items */
+    .order-items-list { padding: 1rem 1.2rem; }
+
+    .order-item-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.6rem 0;
+    }
+
+    .order-item-img {
+        width: 65px;
+        height: 65px;
+        border-radius: 12px;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+        overflow: hidden;
+        border: 1px solid var(--border);
+    }
+
+    .order-item-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    .order-item-info { flex: 1; }
+    .order-item-name { font-size: 0.88rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .order-item-qty { font-size: 0.78rem; color: var(--text-muted); }
+    .order-item-price { font-size: 0.92rem; color: var(--pink); font-weight: 700; }
+
+    /* Order footer */
+    .order-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.2rem;
+        border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+
+    .order-total-info { }
+    .order-total-label { font-size: 0.75rem; color: var(--text-muted); }
+    .order-total-price { font-size: 1rem; font-weight: 700; color: var(--pink); }
+
+    .order-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+    .btn-action {
+        padding: 0.5rem 1rem;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border: none;
+        font-family: 'Lato', sans-serif;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .btn-action.primary {
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        box-shadow: 0 4px 12px var(--pink-glow);
+    }
+
+    .btn-action.secondary {
+        background: transparent;
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+    }
+
+    .btn-action.secondary:hover { border-color: var(--pink); color: var(--pink); }
+    .btn-action.primary:hover { transform: translateY(-1px); box-shadow: 0 6px 18px var(--pink-glow); color: white; }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+    }
+
+    .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+    @media (max-width: 600px) {
+        .history-wrapper { padding: 1rem; }
+        .order-card-footer { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="history-wrapper">
+
+    <div class="page-header">
+        <a href="{{ url_for('profile.view') }}" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <h1>Pesanan Saya 📦</h1>
+    </div>
+
+    <!-- Status tabs seperti TikTok Shop -->
+    <div class="status-tabs">
+        <a href="{{ url_for('order.history') }}" class="status-tab {% if not status_filter %}active{% endif %}">Semua</a>
+        <a href="{{ url_for('order.history', status='waiting') }}" class="status-tab {% if status_filter=='waiting' %}active{% endif %}">⏳ Dibayar</a>
+        <a href="{{ url_for('order.history', status='packed') }}" class="status-tab {% if status_filter=='packed' %}active{% endif %}">📦 Dikemas</a>
+        <a href="{{ url_for('order.history', status='on_the_way') }}" class="status-tab {% if status_filter=='on_the_way' %}active{% endif %}">🚚 Dikirim</a>
+        <a href="{{ url_for('order.history', status='delivered') }}" class="status-tab {% if status_filter=='delivered' %}active{% endif %}">✅ Selesai</a>
+        <a href="{{ url_for('order.history', status='reviewed') }}" class="status-tab {% if status_filter=='reviewed' %}active{% endif %}">⭐ Diulas</a>
+    </div>
+
+    {% if orders %}
+        {% for order in orders %}
+        <div class="order-card">
+            <!-- Header -->
+            <div class="order-card-header">
+                <div class="order-shop">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+                    RafValyn Store
+                    <span style="color:var(--text-muted);font-weight:400;font-size:0.78rem;">• {{ order.created_at.strftime('%d %b %Y') }}</span>
+                </div>
+                <span class="order-status-badge status-{{ order.shipping_status }}">
+                    {% if order.shipping_status == 'waiting' %}⏳ Menunggu Konfirmasi
+                    {% elif order.shipping_status == 'packed' %}📦 Sedang Dikemas
+                    {% elif order.shipping_status == 'picked_up' %}🚚 Dijemput Kurir
+                    {% elif order.shipping_status == 'on_the_way' %}🛵 Sedang Dikirim
+                    {% elif order.shipping_status == 'delivered' %}✅ Pesanan Selesai
+                    {% elif order.shipping_status == 'reviewed' %}⭐ Sudah Diulas
+                    {% endif %}
+                </span>
+            </div>
+
+            <!-- Items -->
+            <div class="order-items-list">
+                {% for item in order.items[:2] %}
+                <div class="order-item-row">
+                    <div class="order-item-img">
+                        {% if item.product.image and item.product.image != 'default_product.jpg' %}
+                            <img src="{{ url_for('static', filename='uploads/products/' + item.product.image) }}" alt="">
+                        {% else %}
+                            🎁
+                        {% endif %}
+                    </div>
+                    <div class="order-item-info">
+                        <p class="order-item-name">{{ item.product.name }}</p>
+                        <p class="order-item-qty">x{{ item.quantity }}</p>
+                    </div>
+                    <p class="order-item-price">Rp {{ "{:,.0f}".format(item.price * item.quantity) }}</p>
+                </div>
+                {% endfor %}
+                {% if order.items|length > 2 %}
+                <p style="font-size:0.78rem;color:var(--text-muted);padding:0.3rem 0;">+{{ order.items|length - 2 }} produk lainnya</p>
+                {% endif %}
+            </div>
+
+            <!-- Footer -->
+            <div class="order-card-footer">
+                <div class="order-total-info">
+                    <p class="order-total-label">Total Pembayaran</p>
+                    <p class="order-total-price">Rp {{ "{:,.0f}".format(order.total_price) }}</p>
+                </div>
+                <div class="order-actions">
+                    <a href="{{ url_for('order.detail', order_id=order.id) }}" class="btn-action secondary">
+                        Lihat Detail
+                    </a>
+                    {% if order.shipping_status == 'waiting' %}
+                    <button class="btn-action primary">💳 Bayar Sekarang</button>
+                    {% elif order.shipping_status == 'on_the_way' %}
+                    <a href="{{ url_for('tracking.track', order_id=order.id) }}" class="btn-action primary">
+                        📍 Lacak Pesanan
+                    </a>
+                    {% elif order.shipping_status == 'delivered' %}
+                    <button class="btn-action primary" onclick="openReview({{ order.id }}, {{ order.items[0].product_id }})">
+                        ⭐ Beri Ulasan
+                    </button>
+                    {% elif order.shipping_status == 'reviewed' %}
+                    <a href="{{ url_for('shop.products') }}" class="btn-action primary">
+                        🛍️ Beli Lagi
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-icon">📦</div>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--text);margin-bottom:0.5rem;">
+                {% if status_filter %}Tidak ada pesanan dengan status ini{% else %}Belum ada pesanan{% endif %}
+            </h3>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem;">Yuk belanja produk valentine untuk orang tersayang!</p>
+            <a href="{{ url_for('shop.products') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.8rem 2rem;background:linear-gradient(135deg,var(--pink-light),var(--pink));color:white;border-radius:12px;font-weight:700;">
+                🌹 Mulai Belanja
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+
+<!-- Review Modal -->
+<div id="reviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:2rem;width:90%;max-width:400px;">
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.2rem;color:var(--text);margin-bottom:1.2rem;">⭐ Beri Ulasan</h3>
+        <form id="reviewForm" method="POST">
+            <input type="hidden" name="product_id" id="reviewProductId">
+            <div style="margin-bottom:1rem;">
+                <label style="display:block;font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">RATING</label>
+                <div id="starRating" style="display:flex;gap:0.5rem;font-size:2rem;">
+                    {% for i in range(1, 6) %}
+                    <span onclick="setRating({{ i }})" style="cursor:pointer;color:var(--border);transition:all 0.2s;" data-star="{{ i }}">★</span>
+                    {% endfor %}
+                </div>
+                <input type="hidden" name="rating" id="ratingInput" value="5">
+            </div>
+            <div style="margin-bottom:1.2rem;">
+                <label style="display:block;font-size:0.78rem;color:var(--text-muted);margin-bottom:0.5rem;">KOMENTAR</label>
+                <textarea name="comment" rows="3" placeholder="Bagaimana pengalaman belanjamu?" style="width:100%;padding:0.8rem;background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Lato',sans-serif;outline:none;resize:none;"></textarea>
+            </div>
+            <div style="display:flex;gap:0.8rem;">
+                <button type="button" onclick="closeReview()" style="flex:1;padding:0.8rem;background:transparent;border:1px solid var(--border);border-radius:10px;color:var(--text-muted);cursor:pointer;font-family:'Lato',sans-serif;">Batal</button>
+                <button type="submit" style="flex:1;padding:0.8rem;background:linear-gradient(135deg,var(--pink-light),var(--pink));border:none;border-radius:10px;color:white;font-weight:700;cursor:pointer;font-family:'Lato',sans-serif;">Kirim Ulasan</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function openReview(orderId, productId) {
+        document.getElementById('reviewForm').action = `/orders/${orderId}/review`;
+        document.getElementById('reviewProductId').value = productId;
+        document.getElementById('reviewModal').style.display = 'flex';
+        setRating(5);
+    }
+
+    function closeReview() {
+        document.getElementById('reviewModal').style.display = 'none';
+    }
+
+    function setRating(rating) {
+        document.getElementById('ratingInput').value = rating;
+        document.querySelectorAll('#starRating span').forEach((star, i) => {
+            star.style.color = i < rating ? '#ffd700' : 'var(--border)';
+        });
+    }
+</script>
+{% endblock %}

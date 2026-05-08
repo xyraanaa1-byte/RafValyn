@@ -1,0 +1,619 @@
+{% extends 'base.html' %}
+{% block title %}Jurnal — RafValyn 📖{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap');
+
+    .journal-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    /* Header */
+    .journal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .journal-title {
+        font-family: 'Caveat', cursive;
+        font-size: 2.5rem;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .journal-title span { color: var(--pink); }
+
+    .journal-date {
+        font-family: 'Caveat', cursive;
+        font-size: 1rem;
+        color: var(--text-muted);
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 0.4rem 1rem;
+    }
+
+    /* New entry buttons */
+    .new-entry-section {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .new-entry-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        color: var(--text);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .new-entry-card::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .new-entry-card.notebook::before { background: linear-gradient(135deg, rgba(255,45,120,0.1), transparent); }
+    .new-entry-card.plain::before { background: linear-gradient(135deg, rgba(67,97,238,0.1), transparent); }
+    .new-entry-card.schedule::before { background: linear-gradient(135deg, rgba(64,145,108,0.1), transparent); }
+
+    .new-entry-card:hover::before { opacity: 1; }
+
+    .new-entry-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        color: var(--text);
+    }
+
+    .new-entry-card.notebook:hover { border-color: var(--pink); }
+    .new-entry-card.plain:hover { border-color: #4361ee; }
+    .new-entry-card.schedule:hover { border-color: #40916c; }
+
+    .entry-icon {
+        font-size: 2.5rem;
+        margin-bottom: 0.8rem;
+        display: block;
+        animation: floatIcon 3s ease-in-out infinite;
+    }
+
+    @keyframes floatIcon {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+    }
+
+    .entry-title {
+        font-family: 'Caveat', cursive;
+        font-size: 1.3rem;
+        font-weight: 700;
+        margin-bottom: 0.3rem;
+    }
+
+    .entry-desc {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        line-height: 1.5;
+    }
+
+    /* Upcoming schedules */
+    .upcoming-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.2rem;
+    }
+
+    .section-header h3 {
+        font-family: 'Caveat', cursive;
+        font-size: 1.4rem;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-link {
+        font-size: 0.82rem;
+        color: var(--pink);
+        text-decoration: none;
+        transition: opacity 0.2s;
+    }
+
+    .section-link:hover { opacity: 0.7; }
+
+    .schedule-mini {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.7rem 0;
+        border-bottom: 1px dashed var(--border);
+        transition: all 0.2s;
+    }
+
+    .schedule-mini:last-child { border-bottom: none; }
+
+    .schedule-date-box {
+        width: 44px; height: 44px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-family: 'Caveat', cursive;
+    }
+
+    .schedule-date-box.pink { background: rgba(255,45,120,0.15); color: var(--pink); }
+    .schedule-date-box.green { background: rgba(64,145,108,0.15); color: #40916c; }
+    .schedule-date-box.blue { background: rgba(67,97,238,0.15); color: #4361ee; }
+    .schedule-date-box.gold { background: rgba(255,193,7,0.15); color: #ffd700; }
+
+    .sched-day { font-size: 1.1rem; font-weight: 700; line-height: 1; }
+    .sched-month { font-size: 0.65rem; }
+
+    .sched-info { flex: 1; }
+    .sched-title { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .sched-time { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+    /* Journal grid */
+    .journals-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.2rem;
+    }
+
+    .journal-card {
+        border-radius: 20px;
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none;
+    }
+
+    /* Warna jurnal */
+    .journal-card.color-pink {
+        background: linear-gradient(135deg, #2d0018, #1a000e);
+        border: 1px solid rgba(255,45,120,0.3);
+    }
+    .journal-card.color-purple {
+        background: linear-gradient(135deg, #1a0033, #0d0022);
+        border: 1px solid rgba(147,51,234,0.3);
+    }
+    .journal-card.color-blue {
+        background: linear-gradient(135deg, #00133d, #000d2b);
+        border: 1px solid rgba(67,97,238,0.3);
+    }
+    .journal-card.color-green {
+        background: linear-gradient(135deg, #001a0d, #000d07);
+        border: 1px solid rgba(64,145,108,0.3);
+    }
+    .journal-card.color-gold {
+        background: linear-gradient(135deg, #1a1200, #0d0a00);
+        border: 1px solid rgba(255,193,7,0.3);
+    }
+
+    [data-theme="light"] .journal-card.color-pink {
+        background: linear-gradient(135deg, #fff0f5, #ffe4ef);
+        border: 1px solid rgba(255,45,120,0.2);
+    }
+    [data-theme="light"] .journal-card.color-purple {
+        background: linear-gradient(135deg, #f5f0ff, #ede4ff);
+        border: 1px solid rgba(147,51,234,0.2);
+    }
+    [data-theme="light"] .journal-card.color-blue {
+        background: linear-gradient(135deg, #f0f4ff, #e4ecff);
+        border: 1px solid rgba(67,97,238,0.2);
+    }
+    [data-theme="light"] .journal-card.color-green {
+        background: linear-gradient(135deg, #f0fff5, #e4ffed);
+        border: 1px solid rgba(64,145,108,0.2);
+    }
+    [data-theme="light"] .journal-card.color-gold {
+        background: linear-gradient(135deg, #fffbf0, #fff8e4);
+        border: 1px solid rgba(255,193,7,0.2);
+    }
+
+    .journal-card:hover {
+        transform: translateY(-5px) rotate(1deg);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    }
+
+    /* Pin decoration */
+    .journal-pin {
+        position: absolute;
+        top: -5px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 16px; height: 30px;
+        background: var(--pink);
+        border-radius: 50% 50% 0 0;
+        box-shadow: 0 2px 8px rgba(255,45,120,0.5);
+        display: none;
+    }
+
+    .journal-card.pinned .journal-pin { display: block; }
+
+    .journal-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 0.8rem;
+    }
+
+    .journal-mood { font-size: 1.5rem; }
+
+    .journal-card-actions {
+        display: flex;
+        gap: 0.3rem;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .journal-card:hover .journal-card-actions { opacity: 1; }
+
+    .card-action-btn {
+        width: 28px; height: 28px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.1);
+        border: none;
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+        font-size: 0.75rem;
+    }
+
+    .card-action-btn:hover { background: rgba(255,255,255,0.2); }
+
+    .journal-card-title {
+        font-family: 'Caveat', cursive;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: white;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
+    }
+
+    [data-theme="light"] .journal-card-title { color: var(--text); }
+
+    .journal-card-preview {
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.6);
+        line-height: 1.6;
+        flex: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    [data-theme="light"] .journal-card-preview { color: var(--text-muted); }
+
+    .journal-card-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 1rem;
+        padding-top: 0.8rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .journal-card-date {
+        font-family: 'Caveat', cursive;
+        font-size: 0.82rem;
+        color: rgba(255,255,255,0.5);
+    }
+
+    [data-theme="light"] .journal-card-date { color: var(--text-muted); }
+
+    .journal-type-badge {
+        font-size: 0.65rem;
+        padding: 0.15rem 0.5rem;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.15);
+        color: rgba(255,255,255,0.7);
+    }
+
+    /* Lines decoration (notebook effect) */
+    .journal-card.type-note::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0;
+        top: 60px; bottom: 0;
+        background: repeating-linear-gradient(
+            transparent,
+            transparent 24px,
+            rgba(255,255,255,0.05) 24px,
+            rgba(255,255,255,0.05) 25px
+        );
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    /* Empty state */
+    .empty-journals {
+        grid-column: 1/-1;
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--bg-card);
+        border: 2px dashed var(--border);
+        border-radius: 24px;
+    }
+
+    .empty-journals-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: floatIcon 3s ease-in-out infinite;
+    }
+
+    /* Mood filter */
+    .filter-row {
+        display: flex;
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.3rem;
+        scrollbar-width: none;
+    }
+
+    .filter-row::-webkit-scrollbar { display: none; }
+
+    .mood-filter {
+        flex-shrink: 0;
+        padding: 0.4rem 1rem;
+        border-radius: 50px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .mood-filter.active, .mood-filter:hover {
+        background: var(--pink);
+        border-color: var(--pink);
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .new-entry-section { grid-template-columns: 1fr; }
+        .journals-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+        .journal-wrapper { padding: 1rem; }
+        .journal-title { font-size: 2rem; }
+    }
+
+    @media (max-width: 480px) {
+        .journals-grid { grid-template-columns: 1fr; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="journal-wrapper">
+
+    <!-- Header -->
+    <div class="journal-header">
+        <h1 class="journal-title">📖 Jurnal<span>ku</span></h1>
+        <div class="journal-date" id="currentDate"></div>
+    </div>
+
+    <!-- New Entry Cards -->
+    <div class="new-entry-section">
+        <a href="{{ url_for('journal.new', type='note') }}" class="new-entry-card notebook">
+            <span class="entry-icon">📓</span>
+            <p class="entry-title" style="color:var(--pink);">Buku Catatan</p>
+            <p class="entry-desc">Tulis dengan gaya notebook aesthetic. Ada garis, bisa format teks, dan simpan kenangan indah.</p>
+        </a>
+        <a href="{{ url_for('journal.new', type='plain') }}" class="new-entry-card plain">
+            <span class="entry-icon" style="animation-delay:0.5s;">✏️</span>
+            <p class="entry-title" style="color:#4361ee;">Catatan Bebas</p>
+            <p class="entry-desc">Tulis apa saja dengan bebas. Sederhana, bersih, dan fokus pada isi tulisanmu.</p>
+        </a>
+        <a href="{{ url_for('journal.schedule') }}" class="new-entry-card schedule">
+            <span class="entry-icon" style="animation-delay:1s;">📅</span>
+            <p class="entry-title" style="color:#40916c;">Jadwal & Agenda</p>
+            <p class="entry-desc">Buat jadwal harian, pengingat acara, dan kelola semua agenda pentingmu.</p>
+        </a>
+    </div>
+
+    <!-- Upcoming Schedules -->
+    {% if schedules %}
+    <div class="upcoming-section">
+        <div class="section-header">
+            <h3>📅 Jadwal Mendatang</h3>
+            <a href="{{ url_for('journal.schedule') }}" class="section-link">Lihat Semua →</a>
+        </div>
+        {% for sched in schedules %}
+        <div class="schedule-mini">
+            <div class="schedule-date-box {{ sched.color }}">
+                <span class="sched-day">{{ sched.date.strftime('%d') }}</span>
+                <span class="sched-month">{{ sched.date.strftime('%b') }}</span>
+            </div>
+            <div class="sched-info">
+                <p class="sched-title">{{ sched.title }}</p>
+                <p class="sched-time">
+                    {% if sched.time %}{{ sched.time.strftime('%H:%M') }}{% else %}Sepanjang hari{% endif %}
+                    {% if sched.description %} • {{ sched.description[:40] }}{% endif %}
+                </p>
+            </div>
+            {% if sched.is_done %}
+            <span style="font-size:0.72rem;color:#40916c;font-weight:700;">✓ Selesai</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Filter -->
+    <div class="filter-row">
+        <div class="mood-filter active" onclick="filterMood('')">📝 Semua</div>
+        <div class="mood-filter" onclick="filterMood('happy')">😊 Bahagia</div>
+        <div class="mood-filter" onclick="filterMood('love')">🥰 Cinta</div>
+        <div class="mood-filter" onclick="filterMood('sad')">😢 Sedih</div>
+        <div class="mood-filter" onclick="filterMood('excited')">🤩 Semangat</div>
+        <div class="mood-filter" onclick="filterMood('calm')">😌 Tenang</div>
+        <div class="mood-filter" onclick="filterMood('angry')">😤 Kesal</div>
+    </div>
+
+    <!-- Journals Grid -->
+    <div class="journals-grid" id="journalsGrid">
+        {% if journals %}
+            {% for journal in journals %}
+            <a href="{{ url_for('journal.view', journal_id=journal.id) }}"
+               class="journal-card color-{{ journal.color }} type-{{ journal.type }} {% if journal.is_pinned %}pinned{% endif %}"
+               data-mood="{{ journal.mood }}">
+
+                <div class="journal-pin"></div>
+
+                <div class="journal-card-header">
+                    <span class="journal-mood">
+                        {% if journal.mood == 'happy' %}😊
+                        {% elif journal.mood == 'love' %}🥰
+                        {% elif journal.mood == 'sad' %}😢
+                        {% elif journal.mood == 'excited' %}🤩
+                        {% elif journal.mood == 'calm' %}😌
+                        {% elif journal.mood == 'angry' %}😤
+                        {% else %}📝{% endif %}
+                    </span>
+                    <div class="journal-card-actions">
+                        <button class="card-action-btn" onclick="event.preventDefault(); pinJournal({{ journal.id }}, this)" title="Pin">
+                            📌
+                        </button>
+                        <button class="card-action-btn" onclick="event.preventDefault(); deleteJournal({{ journal.id }}, this)" title="Hapus">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+
+                <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;">
+                    <p class="journal-card-title">{{ journal.title }}</p>
+                    <p class="journal-card-preview">
+                        {{ journal.content | striptags | truncate(150) if journal.content else 'Belum ada isi...' }}
+                    </p>
+                </div>
+
+                <div class="journal-card-footer">
+                    <span class="journal-card-date">{{ journal.updated_at.strftime('%d %b %Y') }}</span>
+                    <span class="journal-type-badge">
+                        {% if journal.type == 'note' %}📓 Notebook
+                        {% elif journal.type == 'plain' %}✏️ Catatan
+                        {% else %}📄 Lainnya{% endif %}
+                    </span>
+                </div>
+            </a>
+            {% endfor %}
+        {% else %}
+            <div class="empty-journals">
+                <div class="empty-journals-icon">📖</div>
+                <h3 style="font-family:'Caveat',cursive;font-size:1.5rem;color:var(--text);margin-bottom:0.5rem;">
+                    Jurnalmu masih kosong
+                </h3>
+                <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;">
+                    Mulai tulis cerita, pikiran, atau jadwalmu hari ini! 🌹
+                </p>
+                <a href="{{ url_for('journal.new') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.8rem 2rem;background:linear-gradient(135deg,var(--pink-light),var(--pink));color:white;border-radius:12px;font-weight:700;text-decoration:none;box-shadow:0 6px 20px var(--pink-glow);">
+                    ✏️ Mulai Menulis
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tanggal
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const now = new Date();
+    document.getElementById('currentDate').textContent =
+        `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+    // Filter mood
+    function filterMood(mood) {
+        document.querySelectorAll('.mood-filter').forEach(f => f.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.journal-card').forEach(card => {
+            if (!mood || card.dataset.mood === mood) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    // Pin jurnal
+    function pinJournal(id, btn) {
+        fetch(`/journal/${id}/pin`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                const card = btn.closest('.journal-card');
+                card.classList.toggle('pinned', d.pinned);
+                showToast(d.pinned ? '📌 Jurnal di-pin!' : '📌 Pin dilepas!');
+            }
+        });
+    }
+
+    // Hapus jurnal
+    function deleteJournal(id, btn) {
+        if (!confirm('Hapus jurnal ini?')) return;
+        fetch(`/journal/${id}/delete`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                btn.closest('.journal-card').remove();
+                showToast('🗑️ Jurnal dihapus!');
+            }
+        });
+    }
+
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.style.cssText = `position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--pink);color:white;padding:0.8rem 1.5rem;border-radius:12px;font-size:0.9rem;z-index:9999;box-shadow:0 8px 25px var(--pink-glow);`;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+</script>
+{% endblock %}

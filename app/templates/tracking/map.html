@@ -1,0 +1,500 @@
+{% extends 'base.html' %}
+{% block title %}Lacak Pesanan #{{ order.id }} — RafValyn 🌹{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tracking-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .page-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--text);
+    }
+
+    /* Status timeline */
+    .status-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .status-card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1rem;
+        color: var(--text);
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 9px; top: 0; bottom: 0;
+        width: 2px;
+        background: var(--border);
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.2rem;
+        opacity: 0.4;
+        transition: all 0.3s ease;
+    }
+
+    .timeline-item.done { opacity: 1; }
+    .timeline-item.current { opacity: 1; }
+
+    .timeline-dot {
+        position: absolute;
+        left: -2rem;
+        top: 2px;
+        width: 20px; height: 20px;
+        border-radius: 50%;
+        background: var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        z-index: 1;
+        transition: all 0.3s ease;
+    }
+
+    .timeline-item.done .timeline-dot {
+        background: #40916c;
+        color: white;
+    }
+
+    .timeline-item.current .timeline-dot {
+        background: var(--pink);
+        color: white;
+        animation: pulseDot 1.5s ease infinite;
+    }
+
+    @keyframes pulseDot {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,120,0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(255,45,120,0); }
+    }
+
+    .timeline-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.2rem;
+    }
+
+    .timeline-desc {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+    }
+
+    .timeline-time {
+        font-size: 0.72rem;
+        color: var(--pink);
+        margin-top: 0.2rem;
+    }
+
+    /* Map */
+    .map-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 1.2rem;
+    }
+
+    .map-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .map-header h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1rem;
+        color: var(--text);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .live-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.72rem;
+        color: #40916c;
+        background: rgba(64,145,108,0.15);
+        border: 1px solid rgba(64,145,108,0.3);
+        border-radius: 20px;
+        padding: 0.2rem 0.7rem;
+    }
+
+    .live-dot {
+        width: 6px; height: 6px;
+        border-radius: 50%;
+        background: #40916c;
+        animation: livePulse 1s infinite;
+    }
+
+    @keyframes livePulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.3; }
+    }
+
+    #map {
+        width: 100%;
+        height: 400px;
+    }
+
+    /* Info pesanan */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.2rem;
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        border-color: var(--pink);
+        transform: translateY(-2px);
+    }
+
+    .info-label {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .info-value {
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .info-value.pink { color: var(--pink); }
+
+    /* Courier info */
+    .courier-card {
+        background: linear-gradient(135deg, rgba(255,45,120,0.1), rgba(255,45,120,0.05));
+        border: 1px solid rgba(255,45,120,0.2);
+        border-radius: 16px;
+        padding: 1.2rem;
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .courier-avatar {
+        width: 52px; height: 52px;
+        border-radius: 50%;
+        background: rgba(255,45,120,0.15);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
+        border: 2px solid rgba(255,45,120,0.3);
+    }
+
+    .courier-info { flex: 1; }
+    .courier-name { font-weight: 700; color: var(--text); font-size: 0.92rem; }
+    .courier-vehicle { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+    .courier-distance {
+        text-align: right;
+    }
+
+    .distance-num {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.3rem;
+        font-weight: 700;
+        color: var(--pink);
+    }
+
+    .distance-label { font-size: 0.72rem; color: var(--text-muted); }
+
+    @media (max-width: 600px) {
+        .info-grid { grid-template-columns: 1fr; }
+        .tracking-wrapper { padding: 1rem; }
+        #map { height: 300px; }
+    }
+</style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+{% endblock %}
+
+{% block content %}
+<div class="tracking-wrapper">
+
+    <div class="page-header">
+        <a href="{{ url_for('order.detail', order_id=order.id) }}" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);text-decoration:none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <h1>📍 Lacak Pesanan #{{ order.id }}</h1>
+    </div>
+
+    <!-- Kurir info -->
+    {% if order.shipping_status == 'on_the_way' %}
+    <div class="courier-card">
+        <div class="courier-avatar">🛵</div>
+        <div class="courier-info">
+            <p class="courier-name">Kurir RafValyn Express</p>
+            <p class="courier-vehicle">Motor • Plat: H 1234 AB</p>
+            <p style="font-size:0.75rem;color:#40916c;margin-top:0.3rem;">● Sedang dalam perjalanan</p>
+        </div>
+        <div class="courier-distance">
+            <p class="distance-num" id="distanceNum">~2.3</p>
+            <p class="distance-label">km lagi</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Timeline status -->
+    <div class="status-card">
+        <h3>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Status Pengiriman
+        </h3>
+        <div class="timeline">
+            {% set statuses = ['waiting', 'packed', 'picked_up', 'on_the_way', 'delivered'] %}
+            {% set current_idx = statuses.index(order.shipping_status) if order.shipping_status in statuses else 0 %}
+
+            <div class="timeline-item {% if current_idx >= 0 %}done{% endif %}">
+                <div class="timeline-dot">✓</div>
+                <p class="timeline-title">Pesanan Dibuat</p>
+                <p class="timeline-desc">Pesanan berhasil dibuat dan menunggu konfirmasi</p>
+                <p class="timeline-time">{{ order.created_at.strftime('%d %B %Y, %H:%M') }}</p>
+            </div>
+
+            <div class="timeline-item {% if current_idx >= 1 %}done{% elif current_idx == 0 %}current{% endif %}">
+                <div class="timeline-dot">📦</div>
+                <p class="timeline-title">Pesanan Dikemas</p>
+                <p class="timeline-desc">Penjual sedang menyiapkan paketmu</p>
+                {% if current_idx >= 1 %}
+                <p class="timeline-time">{{ (order.created_at + timedelta(hours=2)).strftime('%d %B %Y, %H:%M') }}</p>
+                {% endif %}
+            </div>
+
+            <div class="timeline-item {% if current_idx >= 2 %}done{% elif current_idx == 1 %}current{% endif %}">
+                <div class="timeline-dot">🚚</div>
+                <p class="timeline-title">Dijemput Kurir</p>
+                <p class="timeline-desc">Paket sudah diambil oleh kurir</p>
+                {% if current_idx >= 2 %}
+                <p class="timeline-time">{{ (order.created_at + timedelta(hours=4)).strftime('%d %B %Y, %H:%M') }}</p>
+                {% endif %}
+            </div>
+
+            <div class="timeline-item {% if current_idx >= 3 %}done{% elif current_idx == 2 %}current{% endif %}">
+                <div class="timeline-dot">🛵</div>
+                <p class="timeline-title">Dalam Perjalanan</p>
+                <p class="timeline-desc">Paket sedang dikirim ke alamatmu</p>
+                {% if current_idx >= 3 %}
+                <p class="timeline-time">{{ (order.created_at + timedelta(hours=6)).strftime('%d %B %Y, %H:%M') }}</p>
+                {% endif %}
+            </div>
+
+            <div class="timeline-item {% if current_idx >= 4 %}done{% elif current_idx == 3 %}current{% endif %}">
+                <div class="timeline-dot">✅</div>
+                <p class="timeline-title">Pesanan Tiba</p>
+                <p class="timeline-desc">Paket telah sampai di tujuan</p>
+                {% if current_idx >= 4 %}
+                <p class="timeline-time">{{ (order.created_at + timedelta(hours=8)).strftime('%d %B %Y, %H:%M') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Peta -->
+    {% if order.delivery_lat and order.delivery_lng %}
+    <div class="map-card">
+        <div class="map-header">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Peta Pengiriman
+            </h3>
+            {% if order.shipping_status == 'on_the_way' %}
+            <div class="live-badge">
+                <div class="live-dot"></div>
+                Live Tracking
+            </div>
+            {% endif %}
+        </div>
+        <div id="map"></div>
+    </div>
+    {% endif %}
+
+    <!-- Info pesanan -->
+    <div class="info-grid">
+        <div class="info-card">
+            <p class="info-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Alamat Tujuan
+            </p>
+            <p class="info-value">{{ order.delivery_address }}</p>
+        </div>
+        <div class="info-card">
+            <p class="info-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                Metode Pembayaran
+            </p>
+            <p class="info-value">{{ order.payment_method.upper() }}</p>
+        </div>
+        <div class="info-card">
+            <p class="info-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                Total Pembayaran
+            </p>
+            <p class="info-value pink">Rp {{ "{:,.0f}".format(order.total_price) }}</p>
+        </div>
+        <div class="info-card">
+            <p class="info-label">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Tanggal Pesanan
+            </p>
+            <p class="info-value">{{ order.created_at.strftime('%d %B %Y') }}</p>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const orderId = {{ order.id }};
+    const deliveryLat = {{ order.delivery_lat or -6.9667 }};
+    const deliveryLng = {{ order.delivery_lng or 110.4167 }};
+    const courierLat = {{ order.courier_lat or 'null' }};
+    const courierLng = {{ order.courier_lng or 'null' }};
+    const status = "{{ order.shipping_status }}";
+
+    {% if order.delivery_lat and order.delivery_lng %}
+    // Init peta
+    const map = L.map('map').setView([deliveryLat, deliveryLng], 14);
+
+    // Tile layer (OpenStreetMap gratis)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    // Icon custom
+    const destinationIcon = L.divIcon({
+        html: `<div style="background:var(--pink,#ff2d78);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:3px solid white;box-shadow:0 4px 15px rgba(255,45,120,0.5);">🏠</div>`,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
+        className: ''
+    });
+
+    const courierIcon = L.divIcon({
+        html: `<div style="background:#40916c;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:3px solid white;box-shadow:0 4px 15px rgba(64,145,108,0.5);">🛵</div>`,
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        className: ''
+    });
+
+    // Marker tujuan
+    const destMarker = L.marker([deliveryLat, deliveryLng], { icon: destinationIcon })
+        .addTo(map)
+        .bindPopup(`<b>📍 Tujuan Pengiriman</b><br>${"{{ order.delivery_address }}"}`)
+        .openPopup();
+
+    // Marker kurir
+    let courierMarker = null;
+
+    if (courierLat && courierLng) {
+        courierMarker = L.marker([courierLat, courierLng], { icon: courierIcon })
+            .addTo(map)
+            .bindPopup('<b>🛵 Posisi Kurir</b><br>Sedang menuju lokasi kamu');
+
+        // Garis rute kurir ke tujuan
+        const routeLine = L.polyline([
+            [courierLat, courierLng],
+            [deliveryLat, deliveryLng]
+        ], {
+            color: '#ff2d78',
+            weight: 3,
+            opacity: 0.6,
+            dashArray: '8, 8'
+        }).addTo(map);
+
+        // Fit bounds
+        map.fitBounds([[courierLat, courierLng], [deliveryLat, deliveryLng]], { padding: [40, 40] });
+
+        // Hitung jarak
+        const dist = map.distance([courierLat, courierLng], [deliveryLat, deliveryLng]);
+        const distEl = document.getElementById('distanceNum');
+        if (distEl) distEl.textContent = '~' + (dist / 1000).toFixed(1);
+    }
+
+    // Realtime tracking via SocketIO
+    if (status === 'on_the_way') {
+        const socket = io();
+        socket.emit('join_tracking', { order_id: orderId });
+
+        socket.on('location_update', function(data) {
+            if (courierMarker) {
+                courierMarker.setLatLng([data.courier_lat, data.courier_lng]);
+            } else {
+                courierMarker = L.marker([data.courier_lat, data.courier_lng], { icon: courierIcon })
+                    .addTo(map)
+                    .bindPopup('<b>🛵 Posisi Kurir</b>');
+            }
+
+            const dist = map.distance([data.courier_lat, data.courier_lng], [deliveryLat, deliveryLng]);
+            const distEl = document.getElementById('distanceNum');
+            if (distEl) distEl.textContent = '~' + (dist / 1000).toFixed(1);
+        });
+
+        // Simulasi gerak kurir (demo)
+        let simLat = courierLat || (deliveryLat - 0.02);
+        let simLng = courierLng || (deliveryLng - 0.02);
+
+        setInterval(() => {
+            simLat += (deliveryLat - simLat) * 0.05;
+            simLng += (deliveryLng - simLng) * 0.05;
+
+            if (courierMarker) {
+                courierMarker.setLatLng([simLat, simLng]);
+                const dist = map.distance([simLat, simLng], [deliveryLat, deliveryLng]);
+                const distEl = document.getElementById('distanceNum');
+                if (distEl) distEl.textContent = '~' + (dist / 1000).toFixed(1);
+            }
+        }, 3000);
+    }
+    {% endif %}
+</script>
+{% endblock %}

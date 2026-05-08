@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}Kelola User — Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-wrapper { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text); }
+
+    .search-form { display: flex; gap: 0.8rem; margin-bottom: 1.5rem; }
+    .search-form input { flex: 1; padding: 0.7rem 1rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-family: 'Lato', sans-serif; outline: none; transition: all 0.3s; }
+    .search-form input:focus { border-color: var(--pink); }
+    .search-form button { padding: 0.7rem 1.2rem; background: var(--pink); color: white; border: none; border-radius: 12px; cursor: pointer; font-family: 'Lato', sans-serif; font-weight: 700; }
+
+    .users-grid { display: flex; flex-direction: column; gap: 0.6rem; }
+
+    .user-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .user-card:hover { border-color: rgba(255,45,120,0.3); }
+
+    .user-av {
+        width: 46px; height: 46px;
+        border-radius: 50%; object-fit: cover;
+        border: 2px solid var(--border); flex-shrink: 0;
+    }
+
+    .user-details { flex: 1; min-width: 0; }
+    .user-nm { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .user-em { font-size: 0.78rem; color: var(--text-muted); }
+    .user-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+    .user-actions { display: flex; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+
+    .admin-badge {
+        padding: 0.25rem 0.6rem;
+        background: rgba(255,215,0,0.15);
+        border: 1px solid rgba(255,215,0,0.3);
+        border-radius: 6px;
+        font-size: 0.72rem;
+        color: #ffd700;
+        font-weight: 700;
+    }
+
+    .btn-sm {
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: 1px solid var(--border);
+        background: var(--bg-secondary);
+        color: var(--text-secondary);
+        font-family: 'Lato', sans-serif;
+    }
+
+    .btn-sm:hover { border-color: var(--pink); color: var(--pink); }
+    .btn-sm.danger:hover { border-color: #ff3366; color: #ff3366; background: rgba(255,51,102,0.1); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+
+    <div class="page-header">
+        <h1>👥 Kelola Pengguna</h1>
+        <span style="font-size:0.85rem;color:var(--text-muted);">{{ users.total }} pengguna</span>
+    </div>
+
+    <form method="GET" class="search-form">
+        <input type="text" name="search" value="{{ search }}" placeholder="Cari username atau email...">
+        <button type="submit">Cari</button>
+    </form>
+
+    <div class="users-grid">
+        {% for user in users.items %}
+        <div class="user-card" id="user-{{ user.id }}">
+            <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_photo) }}"
+                 onerror="this.src='https://ui-avatars.com/api/?name={{ user.username }}&background=ff2d78&color=fff&size=100'"
+                 class="user-av" alt="">
+            <div class="user-details">
+                <p class="user-nm">
+                    {{ user.username }}
+                    {% if user.is_admin %}<span class="admin-badge">👑 Admin</span>{% endif %}
+                </p>
+                <p class="user-em">{{ user.email }}</p>
+                <p class="user-meta">Bergabung {{ user.created_at.strftime('%d %B %Y') }} • {{ user.orders|length }} pesanan</p>
+            </div>
+            <div class="user-actions">
+                {% if user.id != current_user.id %}
+                <button class="btn-sm" onclick="toggleAdmin({{ user.id }}, this)">
+                    {{ 'Hapus Admin' if user.is_admin else 'Jadikan Admin' }}
+                </button>
+                <button class="btn-sm danger" onclick="deleteUser({{ user.id }})">Hapus</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleAdmin(userId, btn) {
+        fetch(`/admin/users/${userId}/toggle-admin`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                btn.textContent = d.is_admin ? 'Hapus Admin' : 'Jadikan Admin';
+                location.reload();
+            }
+        });
+    }
+
+    function deleteUser(userId) {
+        if (!confirm('Yakin hapus user ini? Data tidak bisa dikembalikan!')) return;
+        fetch(`/admin/users/${userId}/delete`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) document.getElementById(`user-${userId}`).remove();
+            else alert(d.message);
+        });
+    }
+</script>
+{% endblock %}

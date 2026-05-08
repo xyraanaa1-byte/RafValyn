@@ -1,0 +1,573 @@
+{% extends 'base.html' %}
+{% block title %}Jadwal — RafValyn 📅{% endblock %}
+
+{% block extra_css %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&display=swap');
+
+    .schedule-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .page-header h1 {
+        font-family: 'Caveat', cursive;
+        font-size: 2.2rem;
+        color: var(--text);
+    }
+
+    .page-header h1 span { color: var(--pink); }
+
+    /* Add form */
+    .add-form {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .add-form h3 {
+        font-family: 'Caveat', cursive;
+        font-size: 1.3rem;
+        color: var(--text);
+        margin-bottom: 1.2rem;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .form-group { margin-bottom: 0; }
+
+    label {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.4rem;
+        font-weight: 700;
+    }
+
+    input[type="text"], input[type="date"], input[type="time"], textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-family: 'Lato', sans-serif;
+        font-size: 0.9rem;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    input:focus, textarea:focus { border-color: var(--pink); box-shadow: 0 0 15px var(--pink-glow); }
+
+    .color-row {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+    }
+
+    .sched-color-opt {
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 3px solid transparent;
+        transition: all 0.2s;
+    }
+
+    .sched-color-opt:hover { transform: scale(1.15); }
+    .sched-color-opt.selected { border-color: white; box-shadow: 0 0 0 2px var(--pink); }
+    .sched-color-opt.pink { background: #ff2d78; }
+    .sched-color-opt.green { background: #40916c; }
+    .sched-color-opt.blue { background: #4361ee; }
+    .sched-color-opt.gold { background: #f59e0b; }
+    .sched-color-opt.purple { background: #9333ea; }
+
+    .btn-add-sched {
+        margin-top: 1rem;
+        padding: 0.8rem 1.5rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Lato', sans-serif;
+        box-shadow: 0 4px 15px var(--pink-glow);
+    }
+
+    .btn-add-sched:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--pink-glow); }
+
+    /* Calendar view */
+    .schedule-layout {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+    }
+
+    /* Schedule list */
+    .schedule-list { display: flex; flex-direction: column; gap: 0.7rem; }
+
+    .schedule-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .schedule-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 4px;
+        border-radius: 4px 0 0 4px;
+    }
+
+    .schedule-card.color-pink::before { background: var(--pink); }
+    .schedule-card.color-green::before { background: #40916c; }
+    .schedule-card.color-blue::before { background: #4361ee; }
+    .schedule-card.color-gold::before { background: #f59e0b; }
+    .schedule-card.color-purple::before { background: #9333ea; }
+
+    .schedule-card:hover {
+        border-color: rgba(255,45,120,0.3);
+        transform: translateX(4px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .schedule-card.done { opacity: 0.6; }
+    .schedule-card.done .sched-title { text-decoration: line-through; }
+
+    .sched-date-badge {
+        width: 48px; height: 48px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-family: 'Caveat', cursive;
+    }
+
+    .sched-date-badge.color-pink { background: rgba(255,45,120,0.15); }
+    .sched-date-badge.color-green { background: rgba(64,145,108,0.15); }
+    .sched-date-badge.color-blue { background: rgba(67,97,238,0.15); }
+    .sched-date-badge.color-gold { background: rgba(245,158,11,0.15); }
+    .sched-date-badge.color-purple { background: rgba(147,51,234,0.15); }
+
+    .sched-badge-day { font-size: 1.3rem; font-weight: 700; line-height: 1; }
+    .sched-badge-month { font-size: 0.65rem; color: var(--text-muted); }
+
+    .color-pink .sched-badge-day { color: var(--pink); }
+    .color-green .sched-badge-day { color: #40916c; }
+    .color-blue .sched-badge-day { color: #4361ee; }
+    .color-gold .sched-badge-day { color: #f59e0b; }
+    .color-purple .sched-badge-day { color: #9333ea; }
+
+    .sched-info { flex: 1; min-width: 0; }
+    .sched-title { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 0.2rem; }
+    .sched-meta { font-size: 0.75rem; color: var(--text-muted); }
+
+    .sched-actions { display: flex; gap: 0.4rem; flex-shrink: 0; }
+
+    .sched-btn {
+        width: 32px; height: 32px;
+        border-radius: 8px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 0.8rem;
+        transition: all 0.2s;
+    }
+
+    .sched-btn:hover { border-color: var(--pink); color: var(--pink); }
+    .sched-btn.done-btn.active { background: rgba(64,145,108,0.15); border-color: #40916c; color: #40916c; }
+
+    /* Mini calendar */
+    .mini-calendar {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        position: sticky;
+        top: 80px;
+    }
+
+    .calendar-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .cal-month {
+        font-family: 'Caveat', cursive;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--text);
+    }
+
+    .cal-nav {
+        background: none;
+        border: none;
+        color: var(--text-secondary);
+        cursor: pointer;
+        font-size: 1rem;
+        padding: 0.3rem;
+        border-radius: 6px;
+        transition: all 0.2s;
+    }
+
+    .cal-nav:hover { color: var(--pink); }
+
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.2rem;
+    }
+
+    .cal-day-header {
+        text-align: center;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+        padding: 0.3rem 0;
+        font-weight: 700;
+    }
+
+    .cal-day {
+        aspect-ratio: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.82rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: var(--text-secondary);
+        position: relative;
+    }
+
+    .cal-day:hover { background: rgba(255,45,120,0.1); color: var(--pink); }
+    .cal-day.today { background: var(--pink); color: white; font-weight: 700; }
+    .cal-day.has-event::after {
+        content: '';
+        position: absolute;
+        bottom: 2px;
+        width: 4px; height: 4px;
+        border-radius: 50%;
+        background: var(--pink);
+    }
+    .cal-day.today::after { background: white; }
+    .cal-day.other-month { color: var(--text-muted); opacity: 0.4; }
+
+    /* Group by date */
+    .date-group { margin-bottom: 1.5rem; }
+
+    .date-group-header {
+        font-family: 'Caveat', cursive;
+        font-size: 1.1rem;
+        color: var(--text-muted);
+        margin-bottom: 0.6rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .date-group-header.today-header { color: var(--pink); font-weight: 700; }
+
+    @media (max-width: 768px) {
+        .schedule-layout { grid-template-columns: 1fr; }
+        .form-row { grid-template-columns: 1fr; }
+        .schedule-wrapper { padding: 1rem; }
+        .mini-calendar { position: static; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="schedule-wrapper">
+
+    <div class="page-header">
+        <h1>📅 Jadwal<span> & Agenda</span></h1>
+        <a href="{{ url_for('journal.index') }}" style="font-size:0.85rem;color:var(--pink);text-decoration:none;">← Kembali ke Jurnal</a>
+    </div>
+
+    <!-- Add Schedule Form -->
+    <div class="add-form">
+        <h3>➕ Tambah Jadwal Baru</h3>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Judul Kegiatan</label>
+                <input type="text" id="schedTitle" placeholder="Nama kegiatan..." required>
+            </div>
+            <div class="form-group">
+                <label>Tanggal</label>
+                <input type="date" id="schedDate" required>
+            </div>
+            <div class="form-group">
+                <label>Waktu (opsional)</label>
+                <input type="time" id="schedTime">
+            </div>
+            <div class="form-group">
+                <label>Deskripsi (opsional)</label>
+                <input type="text" id="schedDesc" placeholder="Detail kegiatan...">
+            </div>
+        </div>
+        <div style="margin-top:0.8rem;">
+            <label>Warna</label>
+            <div class="color-row">
+                {% for color in ['pink','green','blue','gold','purple'] %}
+                <div class="sched-color-opt {{ color }} {% if color == 'pink' %}selected{% endif %}"
+                     onclick="selectSchedColor('{{ color }}', this)"></div>
+                {% endfor %}
+            </div>
+        </div>
+        <input type="hidden" id="schedColor" value="pink">
+        <button class="btn-add-sched" onclick="addSchedule()">📅 Tambah Jadwal</button>
+    </div>
+
+    <div class="schedule-layout">
+
+        <!-- Schedule List -->
+        <div>
+            <div class="schedule-list" id="scheduleList">
+                {% set current_date = namespace(val=None) %}
+                {% for sched in schedules %}
+                    {% if sched.date != current_date.val %}
+                        {% if current_date.val is not none %}</div>{% endif %}
+                        {% set current_date.val = sched.date %}
+                        <div class="date-group">
+                        <div class="date-group-header {% if sched.date == today %}today-header{% endif %}">
+                            {% if sched.date == today %}
+                            ⭐ Hari Ini
+                            {% else %}
+                            📅 {{ sched.date.strftime('%A, %d %B %Y') }}
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <div class="schedule-card color-{{ sched.color }} {% if sched.is_done %}done{% endif %}" id="sched-{{ sched.id }}">
+                        <div class="sched-date-badge color-{{ sched.color }}">
+                            <span class="sched-badge-day">{{ sched.date.strftime('%d') }}</span>
+                            <span class="sched-badge-month">{{ sched.date.strftime('%b') }}</span>
+                        </div>
+                        <div class="sched-info">
+                            <p class="sched-title">{{ sched.title }}</p>
+                            <p class="sched-meta">
+                                {% if sched.time %}🕐 {{ sched.time.strftime('%H:%M') }}{% else %}📅 Sepanjang hari{% endif %}
+                                {% if sched.description %} • {{ sched.description }}{% endif %}
+                            </p>
+                        </div>
+                        <div class="sched-actions">
+                            <button class="sched-btn done-btn {% if sched.is_done %}active{% endif %}"
+                                    onclick="toggleDone({{ sched.id }}, this)" title="Tandai selesai">
+                                ✓
+                            </button>
+                            <button class="sched-btn" onclick="deleteSched({{ sched.id }}, this)" title="Hapus">
+                                🗑️
+                            </button>
+                        </div>
+                    </div>
+                {% endfor %}
+                {% if schedules %}</div>{% endif %}
+
+                {% if not schedules %}
+                <div style="text-align:center;padding:3rem 2rem;background:var(--bg-card);border:2px dashed var(--border);border-radius:16px;">
+                    <p style="font-size:3rem;margin-bottom:1rem;">📅</p>
+                    <p style="font-family:'Caveat',cursive;font-size:1.2rem;color:var(--text);margin-bottom:0.5rem;">Belum ada jadwal</p>
+                    <p style="font-size:0.85rem;color:var(--text-muted);">Tambahkan kegiatan dan agenda pentingmu!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Mini Calendar -->
+        <div class="mini-calendar">
+            <div class="calendar-header">
+                <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+                <span class="cal-month" id="calMonth"></span>
+                <button class="cal-nav" onclick="changeMonth(1)">›</button>
+            </div>
+            <div class="calendar-grid" id="calGrid">
+                {% for day in ['Min','Sen','Sel','Rab','Kam','Jum','Sab'] %}
+                <div class="cal-day-header">{{ day }}</div>
+                {% endfor %}
+            </div>
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Tanggal default = hari ini
+    const todayStr = new Date().toISOString().split('T')[0];
+    document.getElementById('schedDate').value = todayStr;
+    document.getElementById('schedDate').min = todayStr;
+
+    let schedColor = 'pink';
+    const months = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    let calYear = new Date().getFullYear();
+    let calMonth = new Date().getMonth();
+
+    // Jadwal dates untuk highlight kalender
+    const schedDates = [
+        {% for s in schedules %}"{{ s.date.strftime('%Y-%m-%d') }}"{% if not loop.last %},{% endif %}{% endfor %}
+    ];
+
+    function selectSchedColor(color, el) {
+        schedColor = color;
+        document.getElementById('schedColor').value = color;
+        document.querySelectorAll('.sched-color-opt').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+    }
+
+    function addSchedule() {
+        const title = document.getElementById('schedTitle').value.trim();
+        const date = document.getElementById('schedDate').value;
+        const time = document.getElementById('schedTime').value;
+        const desc = document.getElementById('schedDesc').value.trim();
+
+        if (!title || !date) {
+            alert('Judul dan tanggal harus diisi!');
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('title', title);
+        formData.append('date', date);
+        formData.append('time', time);
+        formData.append('description', desc);
+        formData.append('color', schedColor);
+
+        fetch('/journal/schedule/add', { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                showToast('✅ Jadwal ditambahkan!');
+                setTimeout(() => location.reload(), 500);
+            } else {
+                alert('Gagal: ' + (d.error || 'Unknown error'));
+            }
+        });
+    }
+
+    function toggleDone(id, btn) {
+        fetch(`/journal/schedule/${id}/done`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                const card = document.getElementById(`sched-${id}`);
+                card.classList.toggle('done', d.done);
+                btn.classList.toggle('active', d.done);
+                showToast(d.done ? '✅ Selesai!' : '↩️ Dibatalkan');
+            }
+        });
+    }
+
+    function deleteSched(id, btn) {
+        if (!confirm('Hapus jadwal ini?')) return;
+        fetch(`/journal/schedule/${id}/delete`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                document.getElementById(`sched-${id}`).remove();
+                showToast('🗑️ Jadwal dihapus!');
+            }
+        });
+    }
+
+    // Mini Calendar
+    function renderCalendar() {
+        const monthNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+        document.getElementById('calMonth').textContent = `${monthNames[calMonth]} ${calYear}`;
+
+        const grid = document.getElementById('calGrid');
+        // Remove day cells (keep headers)
+        const cells = grid.querySelectorAll('.cal-day');
+        cells.forEach(c => c.remove());
+
+        const firstDay = new Date(calYear, calMonth, 1).getDay();
+        const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+        const daysInPrev = new Date(calYear, calMonth, 0).getDate();
+        const today = new Date();
+
+        // Prev month days
+        for (let i = firstDay - 1; i >= 0; i--) {
+            const day = document.createElement('div');
+            day.className = 'cal-day other-month';
+            day.textContent = daysInPrev - i;
+            grid.appendChild(day);
+        }
+
+        // Current month
+        for (let d = 1; d <= daysInMonth; d++) {
+            const day = document.createElement('div');
+            day.className = 'cal-day';
+            day.textContent = d;
+
+            const dateStr = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+            if (d === today.getDate() && calMonth === today.getMonth() && calYear === today.getFullYear()) {
+                day.classList.add('today');
+            }
+
+            if (schedDates.includes(dateStr)) {
+                day.classList.add('has-event');
+            }
+
+            grid.appendChild(day);
+        }
+
+        // Next month
+        const totalCells = firstDay + daysInMonth;
+        const remaining = totalCells % 7 === 0 ? 0 : 7 - (totalCells % 7);
+        for (let d = 1; d <= remaining; d++) {
+            const day = document.createElement('div');
+            day.className = 'cal-day other-month';
+            day.textContent = d;
+            grid.appendChild(day);
+        }
+    }
+
+    function changeMonth(dir) {
+        calMonth += dir;
+        if (calMonth > 11) { calMonth = 0; calYear++; }
+        if (calMonth < 0) { calMonth = 11; calYear--; }
+        renderCalendar();
+    }
+
+    renderCalendar();
+
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.style.cssText = `position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--pink);color:white;padding:0.8rem 1.5rem;border-radius:12px;font-size:0.9rem;z-index:9999;box-shadow:0 8px 25px var(--pink-glow);`;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+</script>
+{% endblock %}

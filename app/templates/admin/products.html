@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}Kelola Produk — Admin RafValyn{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-wrapper { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .page-header {
+        display: flex; align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+    }
+
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text); }
+
+    .filter-row {
+        display: flex; gap: 0.8rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+    }
+
+    .filter-row input, .filter-row select {
+        padding: 0.7rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-family: 'Lato', sans-serif;
+        font-size: 0.88rem;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .filter-row input { flex: 1; min-width: 200px; }
+    .filter-row input:focus, .filter-row select:focus { border-color: var(--pink); }
+
+    .products-table {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .table-header {
+        display: grid;
+        grid-template-columns: 60px 1fr 120px 100px 80px 100px 120px;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-weight: 700;
+    }
+
+    .table-row {
+        display: grid;
+        grid-template-columns: 60px 1fr 120px 100px 80px 100px 120px;
+        gap: 1rem;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        align-items: center;
+        transition: background 0.2s;
+    }
+
+    .table-row:last-child { border-bottom: none; }
+    .table-row:hover { background: rgba(255,45,120,0.03); }
+
+    .product-thumb {
+        width: 50px; height: 50px;
+        border-radius: 10px;
+        object-fit: cover;
+        background: var(--bg-secondary);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem;
+        border: 1px solid var(--border);
+        overflow: hidden;
+    }
+
+    .product-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    .product-name-cell {
+        font-size: 0.85rem;
+        font-weight: 700;
+        color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .product-cat {
+        font-size: 0.72rem;
+        color: var(--pink);
+        text-transform: capitalize;
+        margin-top: 0.2rem;
+    }
+
+    .price-cell { font-size: 0.85rem; font-weight: 700; color: var(--pink); }
+
+    .stock-cell {
+        font-size: 0.85rem; font-weight: 700;
+    }
+
+    .stock-low { color: #ff3366; }
+    .stock-ok { color: #40916c; }
+
+    .status-toggle {
+        width: 40px; height: 22px;
+        background: var(--border); border-radius: 11px;
+        position: relative; cursor: pointer;
+        transition: all 0.3s ease; border: none;
+    }
+
+    .status-toggle::after {
+        content: ''; position: absolute;
+        width: 16px; height: 16px;
+        background: white; border-radius: 50%;
+        top: 3px; left: 3px; transition: all 0.3s ease;
+    }
+
+    .status-toggle.active { background: #40916c; }
+    .status-toggle.active::after { left: 21px; }
+
+    .action-btns { display: flex; gap: 0.4rem; }
+
+    .action-btn {
+        width: 32px; height: 32px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 8px; border: 1px solid var(--border);
+        background: var(--bg-secondary); color: var(--text-secondary);
+        cursor: pointer; transition: all 0.2s; text-decoration: none;
+    }
+
+    .action-btn:hover { border-color: var(--pink); color: var(--pink); }
+    .action-btn.danger:hover { border-color: #ff3366; color: #ff3366; background: rgba(255,51,102,0.1); }
+
+    .btn-add {
+        display: flex; align-items: center; gap: 0.5rem;
+        padding: 0.7rem 1.2rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white; border-radius: 12px;
+        font-size: 0.85rem; font-weight: 700;
+        text-decoration: none; transition: all 0.3s ease;
+        box-shadow: 0 4px 15px var(--pink-glow);
+    }
+
+    .btn-add:hover { transform: translateY(-2px); color: white; box-shadow: 0 8px 25px var(--pink-glow); }
+
+    @media (max-width: 768px) {
+        .table-header { display: none; }
+        .table-row { grid-template-columns: 50px 1fr auto; gap: 0.8rem; }
+        .table-row > *:nth-child(3),
+        .table-row > *:nth-child(4),
+        .table-row > *:nth-child(5),
+        .table-row > *:nth-child(6) { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+
+    <div class="page-header">
+        <h1>🛍️ Kelola Produk</h1>
+        <a href="{{ url_for('admin.add_product') }}" class="btn-add">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tambah Produk
+        </a>
+    </div>
+
+    <!-- Filter -->
+    <form method="GET" class="filter-row">
+        <input type="text" name="search" value="{{ search }}" placeholder="Cari produk...">
+        <select name="category" onchange="this.form.submit()">
+            <option value="">Semua Kategori</option>
+            {% for cat in ['boneka','coklat','bunga','perhiasan','parfum','kartu','paket'] %}
+            <option value="{{ cat }}" {% if category == cat %}selected{% endif %}>{{ cat.title() }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" style="padding:0.7rem 1.2rem;background:var(--pink);color:white;border:none;border-radius:12px;cursor:pointer;font-family:'Lato',sans-serif;font-weight:700;">Cari</button>
+    </form>
+
+    <!-- Table -->
+    <div class="products-table">
+        <div class="table-header">
+            <span>Foto</span>
+            <span>Nama Produk</span>
+            <span>Harga</span>
+            <span>Stok</span>
+            <span>Terjual</span>
+            <span>Status</span>
+            <span>Aksi</span>
+        </div>
+
+        {% for product in products.items %}
+        <div class="table-row" id="product-row-{{ product.id }}">
+            <div class="product-thumb">
+                {% if product.image and product.image != 'default_product.jpg' %}
+                    <img src="{{ url_for('static', filename='uploads/products/' + product.image) }}" alt="">
+                {% else %}🎁{% endif %}
+            </div>
+            <div>
+                <p class="product-name-cell">{{ product.name }}</p>
+                <p class="product-cat">{{ product.category }}</p>
+            </div>
+            <div class="price-cell">Rp {{ "{:,.0f}".format(product.price) }}</div>
+            <div class="stock-cell {% if product.stock < 5 %}stock-low{% else %}stock-ok{% endif %}">
+                {{ product.stock }}
+                {% if product.stock < 5 %}<span style="font-size:0.7rem;">⚠</span>{% endif %}
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);">{{ product.sold_count }}</div>
+            <div>
+                <button class="status-toggle {% if product.is_active %}active{% endif %}"
+                        onclick="toggleProduct({{ product.id }}, this)"
+                        title="{{ 'Aktif' if product.is_active else 'Nonaktif' }}">
+                </button>
+            </div>
+            <div class="action-btns">
+                <a href="{{ url_for('admin.edit_product', product_id=product.id) }}" class="action-btn" title="Edit">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </a>
+                <button class="action-btn danger" onclick="deleteProduct({{ product.id }})" title="Hapus">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.pages > 1 %}
+    <div style="display:flex;justify-content:center;gap:0.5rem;margin-top:1.5rem;">
+        {% if products.has_prev %}
+        <a href="{{ url_for('admin.products', page=products.prev_num, category=category, search=search) }}" style="padding:0.5rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-secondary);text-decoration:none;">‹</a>
+        {% endif %}
+        {% for p in products.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if p %}
+            <a href="{{ url_for('admin.products', page=p, category=category, search=search) }}" style="padding:0.5rem 1rem;background:{% if p == products.page %}var(--pink){% else %}var(--bg-card){% endif %};border:1px solid {% if p == products.page %}var(--pink){% else %}var(--border){% endif %};border-radius:10px;color:{% if p == products.page %}white{% else %}var(--text-secondary){% endif %};text-decoration:none;">{{ p }}</a>
+            {% endif %}
+        {% endfor %}
+        {% if products.has_next %}
+        <a href="{{ url_for('admin.products', page=products.next_num, category=category, search=search) }}" style="padding:0.5rem 1rem;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;color:var(--text-secondary);text-decoration:none;">›</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleProduct(id, btn) {
+        fetch(`/admin/products/${id}/delete`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) btn.classList.toggle('active');
+        });
+    }
+
+    function deleteProduct(id) {
+        if (!confirm('Yakin hapus produk ini?')) return;
+        fetch(`/admin/products/${id}/delete`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                document.getElementById(`product-row-${id}`).remove();
+            }
+        });
+    }
+</script>
+{% endblock %}

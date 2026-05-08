@@ -1,0 +1,533 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} — RafValyn 🌹{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 3rem;
+    }
+
+    .breadcrumb {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+    }
+
+    .breadcrumb a { color: var(--text-muted); transition: color 0.3s; }
+    .breadcrumb a:hover { color: var(--pink); }
+    .breadcrumb span { color: var(--text); }
+
+    .detail-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Gambar produk */
+    .product-image-section {
+        position: sticky;
+        top: 80px;
+    }
+
+    .main-image {
+        width: 100%;
+        aspect-ratio: 1;
+        border-radius: 20px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 8rem;
+        margin-bottom: 1rem;
+    }
+
+    .main-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Info produk */
+    .product-detail-info { }
+
+    .product-category {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.8rem;
+        background: rgba(255,45,120,0.1);
+        border: 1px solid rgba(255,45,120,0.2);
+        border-radius: 50px;
+        font-size: 0.75rem;
+        color: var(--pink);
+        margin-bottom: 1rem;
+        text-transform: capitalize;
+    }
+
+    .product-detail-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        color: var(--text);
+        line-height: 1.3;
+        margin-bottom: 0.8rem;
+    }
+
+    .detail-rating {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .rating-stars { color: #ffd700; font-size: 1rem; }
+    .rating-info { font-size: 0.85rem; color: var(--text-muted); }
+    .sold-info { font-size: 0.85rem; color: var(--text-muted); }
+
+    .detail-price {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--pink);
+        margin-bottom: 1.2rem;
+    }
+
+    /* COD & pengiriman */
+    .delivery-info {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 1rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .delivery-row {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .delivery-row:last-child { margin-bottom: 0; }
+    .delivery-row svg { color: var(--pink); flex-shrink: 0; }
+
+    /* Quantity */
+    .qty-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .qty-label { font-size: 0.85rem; color: var(--text-muted); }
+
+    .qty-control {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .qty-btn {
+        width: 36px;
+        height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: none;
+        border: none;
+        color: var(--pink);
+        font-size: 1.2rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .qty-btn:hover { background: rgba(255,45,120,0.1); }
+
+    .qty-num {
+        width: 40px;
+        text-align: center;
+        font-weight: 700;
+        color: var(--text);
+        font-size: 0.95rem;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        padding: 0.5rem 0;
+    }
+
+    /* Tombol aksi */
+    .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.8rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .btn-buy-now {
+        padding: 0.9rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Lato', sans-serif;
+        box-shadow: 0 6px 20px var(--pink-glow);
+    }
+
+    .btn-buy-now:hover { transform: translateY(-2px); box-shadow: 0 10px 30px var(--pink-glow); }
+
+    .btn-cart-detail {
+        padding: 0.9rem;
+        background: transparent;
+        color: var(--pink);
+        border: 1.5px solid var(--pink);
+        border-radius: 12px;
+        font-size: 0.95rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .btn-cart-detail:hover { background: rgba(255,45,120,0.1); transform: translateY(-2px); }
+
+    /* Deskripsi */
+    .desc-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .desc-card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+    }
+
+    .desc-text {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        line-height: 1.8;
+    }
+
+    /* Produk terkait */
+    .related-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+    }
+
+    .related-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .related-card:hover {
+        border-color: var(--pink);
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px var(--pink-glow);
+    }
+
+    .related-img {
+        aspect-ratio: 1;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        overflow: hidden;
+    }
+
+    .related-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    .related-info { padding: 0.7rem; }
+
+    .related-name {
+        font-size: 0.82rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.3rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .related-price { font-size: 0.88rem; color: var(--pink); font-weight: 700; }
+
+    .toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--pink);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        z-index: 9999;
+        box-shadow: 0 8px 25px var(--pink-glow);
+        display: none;
+    }
+
+    @media (max-width: 768px) {
+        .detail-grid { grid-template-columns: 1fr; }
+        .product-image-section { position: static; }
+        .related-grid { grid-template-columns: repeat(2, 1fr); }
+        .detail-wrapper { padding: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-wrapper">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+        <a href="{{ url_for('shop.index') }}">Beranda</a>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <a href="{{ url_for('shop.products') }}">Toko</a>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+        <span>{{ product.name }}</span>
+    </div>
+
+    <!-- Detail Grid -->
+    <div class="detail-grid">
+
+        <!-- Gambar -->
+        <div class="product-image-section">
+            <div class="main-image">
+                {% if product.image and product.image != 'default_product.jpg' %}
+                    <img src="{{ url_for('static', filename='uploads/products/' + product.image) }}" alt="{{ product.name }}">
+                {% else %}
+                    🎁
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Info -->
+        <div class="product-detail-info">
+            <span class="product-category">{{ product.category or 'Umum' }}</span>
+            <h1 class="product-detail-name">{{ product.name }}</h1>
+
+            <div class="detail-rating">
+                <span class="rating-stars">★★★★★</span>
+                <span class="rating-info">5.0 ({{ product.sold_count }} ulasan)</span>
+                <span class="sold-info">| {{ product.sold_count }} terjual</span>
+            </div>
+
+            <div class="detail-price">Rp {{ "{:,.0f}".format(product.price) }}</div>
+
+            <!-- Info Pengiriman -->
+            <div class="delivery-info">
+                <div class="delivery-row">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+                    Pengiriman ke seluruh Indonesia
+                </div>
+                <div class="delivery-row">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Lokasi: {{ product.location_lat or 'Indonesia' }}
+                </div>
+                {% if product.is_cod %}
+                <div class="delivery-row" style="color:#40916c;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    COD Tersedia
+                </div>
+                {% endif %}
+                <div class="delivery-row">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                    Stok tersedia: {{ product.stock }} item
+                </div>
+            </div>
+
+            <!-- Quantity -->
+            <div class="qty-wrapper">
+                <span class="qty-label">Jumlah:</span>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="changeQty(-1)">−</button>
+                    <div class="qty-num" id="qty">1</div>
+                    <button class="qty-btn" onclick="changeQty(1)">+</button>
+                </div>
+                <span style="font-size:0.82rem;color:var(--text-muted);">Stok: {{ product.stock }}</span>
+            </div>
+
+            <!-- Tombol Aksi -->
+            <div class="action-buttons">
+    <button class="btn-buy-now" onclick="buyNow({{ product.id }})">
+        ⚡ Beli Sekarang
+    </button>
+    <button class="btn-cart-detail" onclick="addToCart({{ product.id }})">
+        🛍️ + Keranjang
+    </button>
+</div>
+
+<!-- Info tambahan -->
+<div style="margin-top:1rem;padding:1rem;background:rgba(255,45,120,0.05);border:1px solid rgba(255,45,120,0.15);border-radius:12px;">
+    <div style="display:flex;flex-direction:column;gap:0.5rem;">
+        <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text-secondary);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Pembayaran aman & terpercaya
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text-secondary);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Pengiriman ke seluruh Indonesia
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text-secondary);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            {% if product.is_cod %}COD tersedia{% else %}Transfer & E-Wallet{% endif %}
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;font-size:0.82rem;color:var(--text-secondary);">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+            Stok tersisa: <strong style="color:var(--pink);">{{ product.stock }}</strong>
+        </div>
+    </div>
+</div>
+
+<!-- Metode pembayaran -->
+<div style="margin-top:1rem;">
+    <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:1px;">Metode Pembayaran</p>
+    <div style="display:flex;flex-wrap:wrap;gap:0.4rem;">
+       <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">GoPay</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">OVO</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">DANA</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">ShopeePay</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">LinkAja</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">QRIS</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">BCA</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">Mandiri</span>
+           <span style="padding:0.25rem 0.6rem;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;font-size:0.7rem;color:var(--text-secondary);">Visa</span>
+          {% if product.is_cod %}
+           <span style="padding:0.25rem 0.6rem;background:rgba(64,145,108,0.15);border:1px solid rgba(64,145,108,0.3);border-radius:6px;font-size:0.7rem;color:#40916c;font-weight:700;">COD</span>
+          {% endif %}
+    </div>
+</div>
+        </div>
+    </div>
+
+    <!-- Deskripsi -->
+    <div class="desc-card">
+        <h3>📋 Deskripsi Produk</h3>
+        <p class="desc-text">{{ product.description or 'Tidak ada deskripsi untuk produk ini.' }}</p>
+    </div>
+
+    <!-- Produk Terkait -->
+    {% if related %}
+    <div style="margin-bottom:2rem;">
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--text);margin-bottom:1rem;">
+            Produk <span style="color:var(--pink);">Terkait</span>
+        </h2>
+        <div class="related-grid">
+            {% for p in related %}
+            <div class="related-card" onclick="window.location.href={{ url_for('shop.product_detail', product_id=p.id) | tojson }}">
+                <div class="related-img">
+                    {% if p.image and p.image != 'default_product.jpg' %}
+                        <img src="{{ url_for('static', filename='uploads/products/' + p.image) }}" alt="{{ p.name }}">
+                    {% else %}
+                        🎁
+                    {% endif %}
+                </div>
+                <div class="related-info">
+                    <p class="related-name">{{ p.name }}</p>
+                    <p class="related-price">Rp {{ "{:,.0f}".format(p.price) }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let qty = 1;
+    const maxStock = {{ product.stock }};
+
+    function changeQty(val) {
+        qty = Math.max(1, Math.min(maxStock, qty + val));
+        document.getElementById('qty').textContent = qty;
+    }
+
+    function addToCart(productId) {
+    const qty = parseInt(document.getElementById('qty').textContent);
+    
+    fetch(`/cart/add/${productId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: qty })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            updateCartBadge(d.cart_count);
+            showToast('✅ Berhasil ditambahkan ke keranjang!');
+        } else {
+            showToast('❌ ' + (d.message || 'Gagal menambahkan'));
+        }
+    });
+}
+
+function buyNow(productId) {
+    fetch(`/cart/add/${productId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (d.success) {
+            window.location.href = '/cart';
+        } else {
+            showToast('❌ ' + (d.message || 'Gagal'));
+        }
+    });
+}
+
+    function buyNow(productId) {
+        fetch(`/cart/add/${productId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(r => r.json())
+        .then(d => { if (d.success) window.location.href = '/cart'; });
+    }
+
+    function updateCartBadge(count) {
+        const badges = document.querySelectorAll('#cartBadge, #cartBadgeBottom');
+        badges.forEach(b => { if (b) { b.textContent = count; b.classList.toggle('show', count > 0); } });
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    fetch('/cart/count').then(r => r.json()).then(d => updateCartBadge(d.count));
+</script>
+{% endblock %}

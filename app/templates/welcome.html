@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selamat Datang — Rafvalyn 🌹</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0005;
+            min-height: 100vh;
+            overflow: hidden;
+            font-family: 'Lato', sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Background gradient animasi */
+        .bg-gradient {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at 20% 50%, #3d0020 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 20%, #1a0010 0%, transparent 50%),
+                        radial-gradient(ellipse at 60% 80%, #2d0018 0%, transparent 50%),
+                        #0a0005;
+            z-index: 0;
+        }
+
+        /* Partikel hati & bunga */
+        .particles {
+            position: fixed;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            animation: floatUp linear infinite;
+            opacity: 0;
+            font-size: 1.2rem;
+            filter: drop-shadow(0 0 6px rgba(255, 100, 130, 0.6));
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(110vh) translateX(0) rotate(0deg) scale(0.5);
+                opacity: 0;
+            }
+            10% { opacity: 1; }
+            90% { opacity: 0.8; }
+            100% {
+                transform: translateY(-10vh) translateX(var(--drift)) rotate(360deg) scale(1.2);
+                opacity: 0;
+            }
+        }
+
+        /* Konten utama */
+        .content {
+            position: relative;
+            z-index: 10;
+            text-align: center;
+            padding: 2rem;
+            animation: fadeInContent 1.5s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInContent {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Logo/icon atas */
+        .logo-icon {
+            font-size: 4rem;
+            display: block;
+            margin-bottom: 1rem;
+            animation: heartbeat 1.5s ease infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 80, 120, 0.8));
+        }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); }
+            14% { transform: scale(1.2); }
+            28% { transform: scale(1); }
+            42% { transform: scale(1.15); }
+            56% { transform: scale(1); }
+        }
+
+        /* Judul */
+        .title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            color: #fff;
+            line-height: 1.1;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 0 40px rgba(255, 100, 130, 0.5);
+        }
+
+        .title span {
+            color: #ff6b8a;
+            font-style: italic;
+        }
+
+        /* Subtitle */
+        .subtitle {
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+            color: rgba(255, 255, 255, 0.5);
+            font-weight: 300;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 3rem;
+        }
+
+        /* Animasi quotes */
+        .quotes-container {
+            height: 60px;
+            margin-bottom: 3rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .quote {
+            position: absolute;
+            width: 100%;
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: clamp(1rem, 3vw, 1.3rem);
+            color: rgba(255, 180, 190, 0.8);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s ease;
+            left: 0;
+        }
+
+        .quote.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Tombol */
+        .btn-container {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+            opacity: 0;
+            animation: fadeInButtons 1s ease 2.5s forwards;
+        }
+
+        @keyframes fadeInButtons {
+            to { opacity: 1; }
+        }
+
+        .btn {
+            padding: 0.9rem 2.5rem;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-family: 'Lato', sans-serif;
+            font-weight: 400;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #ff6b8a, #ff3366);
+            color: white;
+            border: none;
+            box-shadow: 0 8px 30px rgba(255, 51, 102, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(255, 51, 102, 0.6);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            transform: translateY(-3px);
+            text-decoration: none;
+        }
+
+        /* Garis dekoratif */
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 3rem;
+            opacity: 0.3;
+        }
+
+        .divider-line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #ff6b8a, transparent);
+            max-width: 150px;
+        }
+
+        .divider-icon {
+            color: #ff6b8a;
+            font-size: 1rem;
+        }
+
+        /* Loading bar awal */
+        .loading-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #ff3366, #ff6b8a, #ffb3c1);
+            animation: loadBar 2s ease forwards;
+            z-index: 100;
+        }
+
+        @keyframes loadBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* Responsif HP */
+        @media (max-width: 480px) {
+            .btn-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .btn {
+                width: 200px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Background -->
+    <div class="bg-gradient"></div>
+
+    <!-- Partikel hati & bunga -->
+    <div class="particles" id="particles"></div>
+
+    <!-- Loading bar -->
+    <div class="loading-bar"></div>
+
+    <!-- Konten utama -->
+    <div class="content" style="animation-delay: 0.5s;">
+
+    <span class="logo-icon">
+    <svg width="80" height="80" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Daun/tangkai -->
+        <path d="M100 185 Q80 160 75 140" stroke="#2d6a4f" stroke-width="4" fill="none"/>
+        <path d="M100 185 Q120 160 125 140" stroke="#2d6a4f" stroke-width="4" fill="none"/>
+        <ellipse cx="68" cy="155" rx="18" ry="10" fill="#40916c" transform="rotate(-30 68 155)"/>
+        <ellipse cx="132" cy="155" rx="18" ry="10" fill="#40916c" transform="rotate(30 132 155)"/>
+        <line x1="100" y1="185" x2="100" y2="130" stroke="#2d6a4f" stroke-width="5"/>
+
+        <!-- Kelopak luar bawah -->
+        <ellipse cx="60" cy="120" rx="28" ry="18" fill="#c9184a" opacity="0.85" transform="rotate(-20 60 120)"/>
+        <ellipse cx="140" cy="120" rx="28" ry="18" fill="#c9184a" opacity="0.85" transform="rotate(20 140 120)"/>
+        <ellipse cx="100" cy="135" rx="28" ry="18" fill="#c9184a" opacity="0.9"/>
+
+        <!-- Kelopak tengah -->
+        <ellipse cx="70" cy="95" rx="24" ry="32" fill="#ff4d6d" opacity="0.9" transform="rotate(-15 70 95)"/>
+        <ellipse cx="130" cy="95" rx="24" ry="32" fill="#ff4d6d" opacity="0.9" transform="rotate(15 130 95)"/>
+        <ellipse cx="100" cy="88" rx="22" ry="30" fill="#ff6b8a" opacity="0.95"/>
+
+        <!-- Kelopak dalam -->
+        <path d="M100 115 Q75 95 78 70 Q90 55 100 60 Q110 55 122 70 Q125 95 100 115z" fill="#ff85a1"/>
+        <path d="M100 105 Q82 90 85 72 Q93 60 100 64 Q107 60 115 72 Q118 90 100 105z" fill="#ffb3c1"/>
+
+        <!-- Spiral tengah mawar -->
+        <path d="M100 95 Q93 85 96 76 Q100 70 104 76 Q107 85 100 95z" fill="#ff3366"/>
+        <path d="M100 90 Q95 82 97 76 Q100 72 103 76 Q105 82 100 90z" fill="#fff0f3" opacity="0.6"/>
+
+        <!-- Highlight cahaya -->
+        <ellipse cx="88" cy="78" rx="6" ry="9" fill="white" opacity="0.15" transform="rotate(-10 88 78)"/>
+    </svg>
+</span>
+        <h1 class="title">Raf<span>Valyn</span></h1>
+        <p class="subtitle">Rayakan Cintamu Bersama Kami</p>
+
+        <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-icon">----------♥----------</span>
+            <div class="divider-line"></div>
+        </div>
+
+        <!-- Quotes romantis berganti otomatis -->
+        <div class="quotes-container">
+            <p class="quote active" id="q0">"Cinta bukan soal seberapa lama, tapi seberapa dalam."</p>
+            <p class="quote" id="q1">"Valentine bukan soal hadiah, tapi tentang betapa berharganya kamu di hidupku."</p>
+            <p class="quote" id="q2">"Hadiah terbaik adalah kehadiranmu."</p>
+            <p class="quote" id="q3">"Cinta sejati tidak pernah kehabisan kata."</p>
+        </div>
+
+        <!-- Tombol -->
+        <div class="btn-container">
+            <a href="/login" class="btn btn-primary">Masuk</a>
+            <a href="/register" class="btn btn-secondary">Daftar Gratis</a>
+        </div>
+
+    </div>
+
+    <script>
+    // ========== PARTIKEL CANTIK PAKAI CSS SHAPES ==========
+    const particles = document.getElementById('particles');
+
+    const shapes = [
+        // Hati SVG
+        `<svg viewBox="0 0 32 29.6" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16,28.261C4.841,28.261,0,19.077,0,13.543
+                C0,6.076,5.543,0,12.369,0C14.5,0,16,1.5,16,1.5
+                S17.5,0,19.631,0C26.457,0,32,6.076,32,13.543
+                C32,19.077,27.159,28.261,16,28.261z"
+                fill="currentColor"/>
+        </svg>`,
+        // Kelopak bunga
+        `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <ellipse cx="50" cy="25" rx="15" ry="25" fill="currentColor" opacity="0.9"/>
+            <ellipse cx="75" cy="50" rx="25" ry="15" fill="currentColor" opacity="0.9"/>
+            <ellipse cx="50" cy="75" rx="15" ry="25" fill="currentColor" opacity="0.9"/>
+            <ellipse cx="25" cy="50" rx="25" ry="15" fill="currentColor" opacity="0.9"/>
+            <circle cx="50" cy="50" r="12" fill="#ff9eb5"/>
+        </svg>`,
+        // Bintang
+        `<svg viewBox="0 0 51 48" xmlns="http://www.w3.org/2000/svg">
+            <path d="M25 1l6 17h18L35 29l5 17-15-10-15 10 5-17L1 18h18z"
+                fill="currentColor"/>
+        </svg>`,
+        // Berlian
+        `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <polygon points="50,5 95,35 95,65 50,95 5,65 5,35"
+                fill="currentColor" opacity="0.85"/>
+        </svg>`
+    ];
+
+    const colors = [
+        '#ff6b8a', '#ff3366', '#ffb3c1',
+        '#ff8fab', '#ff4d6d', '#ffccd5',
+        '#c9184a', '#ff85a1', '#ffc2d1'
+    ];
+
+    function createParticle() {
+        const wrapper = document.createElement('div');
+        wrapper.classList.add('particle');
+
+        const inner = document.createElement('div');
+        inner.style.cssText = `
+            width: 100%;
+            height: 100%;
+            color: ${colors[Math.floor(Math.random() * colors.length)]};
+            filter: drop-shadow(0 0 6px currentColor);
+        `;
+        inner.innerHTML = shapes[Math.floor(Math.random() * shapes.length)];
+
+        wrapper.appendChild(inner);
+
+        const startX = Math.random() * 100;
+        const drift = (Math.random() - 0.5) * 250;
+        const duration = 7 + Math.random() * 9;
+        const delay = Math.random() * 4;
+        const size = 14 + Math.random() * 22;
+
+        wrapper.style.cssText = `
+            position: absolute;
+            left: ${startX}%;
+            width: ${size}px;
+            height: ${size}px;
+            --drift: ${drift}px;
+            animation: floatUp ${duration}s ${delay}s linear infinite;
+            opacity: 0;
+        `;
+
+        particles.appendChild(wrapper);
+        setTimeout(() => wrapper.remove(), (duration + delay) * 1000);
+    }
+
+    // Spawn partikel terus menerus
+    for (let i = 0; i < 20; i++) createParticle();
+    setInterval(createParticle, 350);
+
+    // ========== QUOTES BERGANTI OTOMATIS ==========
+    let currentQuote = 0;
+    const quotes = document.querySelectorAll('.quote');
+
+    setInterval(() => {
+        quotes[currentQuote].classList.remove('active');
+        currentQuote = (currentQuote + 1) % quotes.length;
+        quotes[currentQuote].classList.add('active');
+    }, 3000);
+</script>
+
+</body>
+</html>

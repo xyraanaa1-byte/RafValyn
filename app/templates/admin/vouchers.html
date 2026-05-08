@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}Kelola Voucher — Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-wrapper { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text); }
+
+    .voucher-form-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .voucher-form-card h3 { font-family: 'Playfair Display', serif; font-size: 1rem; color: var(--text); margin-bottom: 1.2rem; }
+
+    .form-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+    .form-group { margin-bottom: 0; }
+
+    label { display: block; font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.4rem; font-weight: 700; }
+
+    input, select {
+        width: 100%; padding: 0.75rem 1rem;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 10px; color: var(--text);
+        font-family: 'Lato', sans-serif; font-size: 0.88rem;
+        outline: none; transition: all 0.3s ease;
+    }
+
+    input:focus, select:focus { border-color: var(--pink); }
+
+    .btn-create {
+        margin-top: 1rem; padding: 0.8rem 1.5rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white; border: none; border-radius: 12px;
+        font-weight: 700; cursor: pointer; font-family: 'Lato', sans-serif;
+        box-shadow: 0 4px 15px var(--pink-glow);
+    }
+
+    .vouchers-list { display: flex; flex-direction: column; gap: 0.7rem; }
+
+    .voucher-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        transition: all 0.3s;
+    }
+
+    .voucher-card:hover { border-color: rgba(255,45,120,0.3); }
+
+    .voucher-code {
+        font-family: monospace;
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--pink);
+        background: rgba(255,45,120,0.1);
+        padding: 0.3rem 0.8rem;
+        border-radius: 8px;
+        min-width: 130px;
+    }
+
+    .voucher-info { flex: 1; }
+    .voucher-type { font-size: 0.82rem; color: var(--text); font-weight: 700; }
+    .voucher-detail { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+    .voucher-quota { text-align: center; }
+    .quota-num { font-size: 1.1rem; font-weight: 700; color: var(--text); }
+    .quota-label { font-size: 0.7rem; color: var(--text-muted); }
+
+    .voucher-status {
+        padding: 0.3rem 0.7rem;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .v-active { background: rgba(64,145,108,0.15); color: #40916c; }
+    .v-expired { background: rgba(255,51,102,0.15); color: #ff8fab; }
+
+    @media (max-width: 600px) {
+        .form-row { grid-template-columns: 1fr; }
+        .admin-wrapper { padding: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+
+    <div class="page-header">
+        <h1>🎟️ Kelola Voucher</h1>
+    </div>
+
+    <!-- Form tambah voucher -->
+    <div class="voucher-form-card">
+        <h3>➕ Buat Voucher Baru</h3>
+        <form method="POST" action="{{ url_for('admin.add_voucher') }}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Kode Voucher</label>
+                    <input type="text" name="code" placeholder="VALENTINE10" style="text-transform:uppercase;" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipe</label>
+                    <select name="type">
+                        <option value="discount">Diskon (%)</option>
+                        <option value="free_shipping">Gratis Ongkir</option>
+                        <option value="cashback">Cashback (Rp)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nilai (%/Rp)</label>
+                    <input type="number" name="value" placeholder="10" required>
+                </div>
+                <div class="form-group">
+                    <label>Min. Pembelian (Rp)</label>
+                    <input type="number" name="min_purchase" placeholder="100000">
+                </div>
+                <div class="form-group">
+                    <label>Kuota</label>
+                    <input type="number" name="quota" placeholder="100" value="100">
+                </div>
+                <div class="form-group">
+                    <label>Berlaku (hari)</label>
+                    <input type="number" name="days" placeholder="30" value="30">
+                </div>
+            </div>
+            <button type="submit" class="btn-create">🎟️ Buat Voucher</button>
+        </form>
+    </div>
+
+    <!-- Daftar voucher -->
+    <div class="vouchers-list">
+        {% for v in vouchers %}
+        <div class="voucher-card">
+            <div class="voucher-code">{{ v.code }}</div>
+            <div class="voucher-info">
+                <p class="voucher-type">
+                    {% if v.type == 'discount' %}Diskon {{ v.value }}%
+                    {% elif v.type == 'free_shipping' %}Gratis Ongkir
+                    {% elif v.type == 'cashback' %}Cashback Rp {{ "{:,.0f}".format(v.value) }}
+                    {% endif %}
+                </p>
+                <p class="voucher-detail">
+                    Min. Rp {{ "{:,.0f}".format(v.min_purchase) }} •
+                    Expired: {{ v.expired_at.strftime('%d %b %Y') if v.expired_at else 'Tidak ada' }}
+                </p>
+            </div>
+            <div class="voucher-quota">
+                <p class="quota-num">{{ v.used_count }}/{{ v.quota }}</p>
+                <p class="quota-label">Terpakai</p>
+            </div>
+            <span class="voucher-status {% if v.is_active %}v-active{% else %}v-expired{% endif %}">
+                {{ '✓ Aktif' if v.is_active else '✗ Nonaktif' }}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}

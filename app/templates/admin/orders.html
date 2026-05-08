@@ -1,0 +1,135 @@
+{% extends 'base.html' %}
+{% block title %}Kelola Pesanan — Admin{% endblock %}
+
+{% block extra_css %}
+<style>
+    .admin-wrapper { max-width: 1400px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 1.5rem; color: var(--text); }
+
+    .status-tabs { display: flex; gap: 0; margin-bottom: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 0.3rem; overflow-x: auto; scrollbar-width: none; }
+    .status-tabs::-webkit-scrollbar { display: none; }
+
+    .status-tab { flex-shrink: 0; padding: 0.6rem 1rem; border-radius: 10px; font-size: 0.82rem; color: var(--text-muted); cursor: pointer; transition: all 0.3s ease; text-decoration: none; white-space: nowrap; }
+    .status-tab.active { background: var(--pink); color: white; font-weight: 700; }
+    .status-tab:hover:not(.active) { background: rgba(255,45,120,0.1); color: var(--pink); }
+
+    .orders-list { display: flex; flex-direction: column; gap: 0.8rem; }
+
+    .order-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.2rem 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr auto auto auto;
+        gap: 1rem;
+        align-items: center;
+        transition: all 0.3s ease;
+    }
+
+    .order-card:hover { border-color: rgba(255,45,120,0.3); box-shadow: 0 4px 15px var(--pink-glow); }
+
+    .order-main-info { }
+    .order-id-admin { font-weight: 700; font-size: 0.92rem; color: var(--text); margin-bottom: 0.2rem; }
+    .order-user-admin { font-size: 0.8rem; color: var(--text-muted); }
+    .order-date-admin { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+    .order-amount-admin { font-weight: 700; color: var(--pink); font-size: 0.95rem; }
+    .order-payment { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; margin-top: 0.2rem; }
+
+    .status-select {
+        padding: 0.5rem 0.8rem;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        color: var(--text);
+        font-family: 'Lato', sans-serif;
+        font-size: 0.8rem;
+        outline: none;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .status-select:focus { border-color: var(--pink); }
+
+    @media (max-width: 768px) {
+        .order-card { grid-template-columns: 1fr; }
+        .admin-wrapper { padding: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-wrapper">
+
+    <div class="page-header">
+        <h1>📦 Kelola Pesanan</h1>
+        <span style="font-size:0.85rem;color:var(--text-muted);">{{ orders.total }} pesanan</span>
+    </div>
+
+    <div class="status-tabs">
+        <a href="{{ url_for('admin.orders') }}" class="status-tab {% if not status %}active{% endif %}">Semua</a>
+        <a href="{{ url_for('admin.orders', status='waiting') }}" class="status-tab {% if status=='waiting' %}active{% endif %}">⏳ Menunggu</a>
+        <a href="{{ url_for('admin.orders', status='packed') }}" class="status-tab {% if status=='packed' %}active{% endif %}">📦 Dikemas</a>
+        <a href="{{ url_for('admin.orders', status='on_the_way') }}" class="status-tab {% if status=='on_the_way' %}active{% endif %}">🚚 Dikirim</a>
+        <a href="{{ url_for('admin.orders', status='delivered') }}" class="status-tab {% if status=='delivered' %}active{% endif %}">✅ Selesai</a>
+    </div>
+
+    <div class="orders-list">
+        {% for order in orders.items %}
+        <div class="order-card">
+            <div class="order-main-info">
+                <p class="order-id-admin">#ORDER-{{ order.id }}</p>
+                <p class="order-user-admin">👤 {{ order.user.username }} — {{ order.delivery_address[:40] if order.delivery_address else 'Alamat belum diisi' }}...</p>
+                <p class="order-date-admin">{{ order.created_at.strftime('%d %B %Y, %H:%M') }}</p>
+            </div>
+            <div>
+                <p class="order-amount-admin">Rp {{ "{:,.0f}".format(order.total_price) }}</p>
+                <p class="order-payment">{{ order.payment_method }}</p>
+            </div>
+            <select class="status-select" onchange="updateStatus({{ order.id }}, this.value)">
+                {% for s in ['waiting','packed','picked_up','on_the_way','delivered'] %}
+                <option value="{{ s }}" {% if order.shipping_status == s %}selected{% endif %}>
+                    {% if s == 'waiting' %}⏳ Menunggu
+                    {% elif s == 'packed' %}📦 Dikemas
+                    {% elif s == 'picked_up' %}🚚 Dijemput
+                    {% elif s == 'on_the_way' %}🛵 Dikirim
+                    {% elif s == 'delivered' %}✅ Selesai{% endif %}
+                </option>
+                {% endfor %}
+            </select>
+            <a href="{{ url_for('order.detail', order_id=order.id) }}" style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--text-secondary);text-decoration:none;transition:all 0.2s;" onmouseover="this.style.borderColor='var(--pink)';this.style.color='var(--pink)'" onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function updateStatus(orderId, status) {
+        fetch(`/admin/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) showToast('✅ Status berhasil diupdate!');
+        });
+    }
+
+    function showToast(msg) {
+        const t = document.createElement('div');
+        t.style.cssText = `position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--pink);color:white;padding:0.8rem 1.5rem;border-radius:12px;font-size:0.9rem;z-index:9999;`;
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(() => t.remove(), 3000);
+    }
+</script>
+{% endblock %}

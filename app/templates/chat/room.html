@@ -1,0 +1,1281 @@
+{% extends 'base.html' %}
+{% block title %}Chat dengan {{ other_user.username }} — RafValyn 💬{% endblock %}
+
+{% block extra_css %}
+<style>
+    .chat-room-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        height: calc(100vh - 65px - 80px);
+    }
+
+    /* Header */
+    .chat-header {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.8rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        margin-bottom: 0.8rem;
+        flex-shrink: 0;
+    }
+
+    .back-btn {
+        width: 36px; height: 36px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        transition: all 0.3s ease;
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+
+    .back-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+    .chat-user-info { display: flex; align-items: center; gap: 0.8rem; flex: 1; }
+
+    .chat-avatar {
+        width: 42px; height: 42px;
+        border-radius: 50%; object-fit: cover;
+        border: 2px solid var(--pink);
+    }
+
+    .chat-username { font-weight: 700; font-size: 0.95rem; color: var(--text); }
+
+    .chat-status {
+        font-size: 0.72rem; color: #40916c;
+        display: flex; align-items: center; gap: 0.3rem;
+    }
+
+    .status-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%; background: #40916c;
+        animation: pulseGreen 2s infinite;
+    }
+
+    @keyframes pulseGreen { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    .chat-header-actions {
+        display: flex; gap: 0.5rem; align-items: center;
+    }
+
+    .header-action-btn {
+        width: 36px; height: 36px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .header-action-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+    /* Messages area */
+    .messages-area {
+        flex: 1; overflow-y: auto;
+        padding: 0.5rem 0;
+        display: flex; flex-direction: column; gap: 0.3rem;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+    }
+
+    .messages-area::-webkit-scrollbar { width: 3px; }
+    .messages-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* Date separator */
+    .date-sep {
+        text-align: center; margin: 0.8rem 0;
+    }
+
+    .date-sep span {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 0.2rem 0.8rem;
+        font-size: 0.7rem; color: var(--text-muted);
+    }
+
+    /* Message bubble */
+    .msg-wrapper {
+        display: flex;
+        flex-direction: column;
+        max-width: 72%;
+        animation: msgIn 0.2s ease;
+        position: relative;
+    }
+
+    @keyframes msgIn {
+        from { opacity:0; transform:translateY(6px); }
+        to { opacity:1; transform:translateY(0); }
+    }
+
+    .msg-wrapper.mine { align-self: flex-end; align-items: flex-end; }
+    .msg-wrapper.theirs { align-self: flex-start; align-items: flex-start; }
+
+    .msg-row { display: flex; align-items: flex-end; gap: 0.4rem; }
+    .msg-wrapper.mine .msg-row { flex-direction: row-reverse; }
+
+    .msg-avatar {
+        width: 26px; height: 26px;
+        border-radius: 50%; object-fit: cover;
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+    }
+
+    /* Reply preview in bubble */
+    .reply-preview {
+        background: rgba(255,255,255,0.08);
+        border-left: 3px solid var(--pink);
+        border-radius: 8px;
+        padding: 0.4rem 0.7rem;
+        margin-bottom: 0.3rem;
+        font-size: 0.75rem;
+    }
+
+    .reply-preview-sender { color: var(--pink); font-weight: 700; margin-bottom: 0.1rem; }
+    .reply-preview-content { color: var(--text-muted); }
+
+    .bubble {
+        padding: 0.6rem 0.9rem;
+        border-radius: 18px;
+        font-size: 0.9rem;
+        line-height: 1.5;
+        word-break: break-word;
+        position: relative;
+        cursor: pointer;
+    }
+
+    .msg-wrapper.mine .bubble {
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border-bottom-right-radius: 4px;
+    }
+
+    .msg-wrapper.theirs .bubble {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text);
+        border-bottom-left-radius: 4px;
+    }
+
+    /* Deleted message */
+    .bubble.deleted {
+        background: var(--bg-secondary) !important;
+        border: 1px dashed var(--border) !important;
+        color: var(--text-muted) !important;
+        font-style: italic;
+    }
+
+    /* Image in chat */
+    .chat-img {
+        max-width: 220px;
+        border-radius: 14px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .chat-img:hover { opacity: 0.9; }
+
+    /* Audio in chat */
+    .chat-audio { width: 220px; }
+    .chat-audio audio { width: 100%; border-radius: 8px; }
+
+    /* Message meta */
+    .msg-meta {
+        display: flex; align-items: center; gap: 0.3rem;
+        margin-top: 0.2rem; padding: 0 0.3rem;
+    }
+
+    .msg-time { font-size: 0.65rem; color: var(--text-muted); }
+    .msg-edited { font-size: 0.62rem; color: var(--text-muted); font-style: italic; }
+
+    /* Read receipt */
+    .read-receipt { font-size: 0.7rem; color: var(--pink); }
+
+    /* Context menu */
+    .context-menu {
+        position: fixed;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.4rem;
+        box-shadow: var(--shadow);
+        z-index: 1000;
+        min-width: 160px;
+        display: none;
+    }
+
+    .context-item {
+        display: flex; align-items: center; gap: 0.6rem;
+        padding: 0.6rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .context-item:hover { background: var(--bg-card); color: var(--pink); }
+    .context-item.danger:hover { color: #ff3366; background: rgba(255,51,102,0.1); }
+
+    /* Reply bar */
+    .reply-bar {
+        display: none;
+        align-items: center;
+        gap: 0.8rem;
+        padding: 0.6rem 1rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        margin-bottom: 0.5rem;
+        flex-shrink: 0;
+    }
+
+    .reply-bar.show { display: flex; }
+    .reply-bar-content { flex: 1; }
+    .reply-bar-sender { font-size: 0.78rem; color: var(--pink); font-weight: 700; }
+    .reply-bar-text { font-size: 0.78rem; color: var(--text-muted); }
+
+    .reply-close {
+        background: none; border: none;
+        color: var(--text-muted); cursor: pointer;
+        font-size: 1.1rem; padding: 0.2rem;
+    }
+
+    /* Typing indicator */
+    .typing-indicator {
+        display: none; align-items: center; gap: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        width: fit-content;
+        font-size: 0.75rem; color: var(--text-muted);
+    }
+
+    .typing-dots { display: flex; gap: 3px; }
+    .typing-dot {
+        width: 5px; height: 5px;
+        background: var(--text-muted); border-radius: 50%;
+        animation: typeBounce 1.2s infinite;
+    }
+    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typeBounce { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-4px); } }
+
+    /* Input area */
+    .chat-input-area {
+        flex-shrink: 0;
+        padding-top: 0.5rem;
+    }
+
+    .chat-input-row {
+        display: flex; gap: 0.6rem; align-items: flex-end;
+    }
+
+    .chat-input-wrapper {
+        flex: 1;
+        background: var(--bg-card);
+        border: 1.5px solid var(--border);
+        border-radius: 14px;
+        transition: all 0.3s ease;
+        display: flex; align-items: center;
+        padding: 0.5rem 0.8rem;
+        gap: 0.5rem;
+    }
+
+    .chat-input-wrapper:focus-within {
+        border-color: var(--pink);
+        box-shadow: 0 0 15px var(--pink-glow);
+    }
+
+    .chat-input {
+        flex: 1; background: none; border: none; outline: none;
+        color: var(--text); font-family: 'Lato', sans-serif;
+        font-size: 0.92rem; resize: none; max-height: 100px; line-height: 1.5;
+    }
+
+    .chat-input::placeholder { color: var(--text-muted); }
+
+    .input-action-btn {
+        background: none; border: none;
+        color: var(--text-muted); cursor: pointer;
+        padding: 0.2rem; border-radius: 6px;
+        transition: all 0.2s; display: flex; align-items: center;
+        flex-shrink: 0;
+    }
+
+    .input-action-btn:hover { color: var(--pink); }
+
+    .btn-send-chat {
+        width: 44px; height: 44px;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        border: none; border-radius: 12px;
+        color: white; cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 15px var(--pink-glow);
+    }
+
+    .btn-send-chat:hover { transform: translateY(-2px); box-shadow: 0 8px 25px var(--pink-glow); }
+    .btn-send-chat:active { transform: scale(0.95); }
+
+    /* Edit input */
+    .edit-input {
+        width: 100%; background: none; border: none; outline: none;
+        color: inherit; font-family: 'Lato', sans-serif; font-size: 0.9rem;
+        line-height: 1.5;
+    }
+
+    /* Image modal */
+    .img-modal {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.9);
+        z-index: 9999;
+        display: none;
+        align-items: center; justify-content: center;
+    }
+
+    .img-modal.show { display: flex; }
+    .img-modal img { max-width: 90vw; max-height: 90vh; border-radius: 12px; }
+    .img-modal-close {
+        position: absolute; top: 1rem; right: 1rem;
+        background: rgba(255,255,255,0.1); border: none;
+        color: white; width: 40px; height: 40px;
+        border-radius: 50%; font-size: 1.2rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Voice recording */
+    .recording-indicator {
+        display: none; align-items: center; gap: 0.5rem;
+        color: #ff3366; font-size: 0.82rem; animation: blink 1s infinite;
+    }
+
+    @keyframes blink { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+
+    @media (max-width: 768px) {
+        .chat-room-wrapper { padding: 0.8rem; }
+        .msg-wrapper { max-width: 85%; }
+    }
+
+    /* Call Modals */
+.call-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.call-modal.show { display: flex; }
+
+.call-modal-card {
+    background: linear-gradient(135deg, #1a0010, #3d0020);
+    border: 1px solid rgba(255,45,120,0.3);
+    border-radius: 28px;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    width: 320px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,45,120,0.2);
+    position: relative;
+}
+
+.call-avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    margin-bottom: 1.2rem;
+}
+
+.call-avatar-large {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--pink);
+    box-shadow: 0 0 30px rgba(255,45,120,0.5);
+}
+
+.call-pulse {
+    position: absolute;
+    inset: -8px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,45,120,0.4);
+    animation: callPulse 1.5s ease-out infinite;
+}
+
+@keyframes callPulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.3); opacity: 0; }
+}
+
+.call-username {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    color: white;
+    margin-bottom: 0.3rem;
+}
+
+.call-status {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 2rem;
+}
+
+.call-actions {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+}
+
+.call-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: white;
+}
+
+.call-btn.reject {
+    background: #ff3366;
+    box-shadow: 0 6px 20px rgba(255,51,102,0.4);
+}
+
+.call-btn.accept {
+    background: #40916c;
+    box-shadow: 0 6px 20px rgba(64,145,108,0.4);
+}
+
+.call-btn:hover { transform: scale(1.1); }
+
+/* Video */
+.video-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background: #000;
+}
+
+.remote-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.local-video {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    width: 90px;
+    border-radius: 10px;
+    border: 2px solid var(--pink);
+}
+
+/* Call controls */
+.call-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1.5rem;
+}
+
+.call-ctrl-btn {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.call-ctrl-btn:hover { background: rgba(255,255,255,0.2); }
+.call-ctrl-btn.muted { background: rgba(255,51,102,0.3); border-color: #ff3366; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="chat-room-wrapper">
+
+    <!-- Header -->
+    <div class="chat-header">
+        <a href="{{ url_for('chat.index') }}" class="back-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <div class="chat-user-info">
+            <img src="{{ url_for('static', filename='uploads/profiles/' + other_user.profile_photo) }}"
+                 onerror="this.src='https://ui-avatars.com/api/?name={{ other_user.username }}&background=ff2d78&color=fff&size=100'"
+                 class="chat-avatar" alt="">
+            <div>
+                <p class="chat-username">{{ other_user.username }}</p>
+                <p class="chat-status"><span class="status-dot"></span> Online</p>
+            </div>
+        </div>
+        <div class="chat-header-actions">
+            <button class="header-action-btn" title="Panggilan Suara" onclick="startCall('audio')">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+            </button>
+            <button class="header-action-btn" title="Video Call" onclick="startCall('video')">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    <div class="messages-area" id="messagesArea">
+        <div class="date-sep">
+            <span>{{ room.created_at.strftime('%d %B %Y') }}</span>
+        </div>
+
+        {% for msg in room.messages %}
+            {% if not msg.is_deleted_for_all and msg.is_deleted_for_me != current_user.id %}
+            {% set is_mine = msg.sender_id == current_user.id %}
+            <div class="msg-wrapper {% if is_mine %}mine{% else %}theirs{% endif %}" id="msg-{{ msg.id }}"
+                 oncontextmenu="showContext(event, {{ msg.id }}, {{ 'true' if is_mine else 'false' }}, '{{ msg.message_type }}')">
+                <div class="msg-row">
+                    {% if not is_mine %}
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + other_user.profile_photo) }}"
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ other_user.username }}&background=ff2d78&color=fff&size=100'"
+                         class="msg-avatar" alt="">
+                    {% endif %}
+                    <div>
+                        {% if msg.reply_to %}
+                        <div class="reply-preview">
+                            <p class="reply-preview-sender">{{ msg.reply_to.sender.username }}</p>
+                            <p class="reply-preview-content">{{ msg.reply_to.content[:60] if msg.reply_to.content else '📷 Foto' }}</p>
+                        </div>
+                        {% endif %}
+                        <div class="bubble {% if msg.message_type == 'deleted' %}deleted{% endif %}">
+                            {% if msg.message_type == 'text' or msg.message_type == 'deleted' %}
+                                {{ msg.content }}
+                                {% if msg.is_edited %}<span style="font-size:0.65rem;opacity:0.6;"> (diedit)</span>{% endif %}
+                            {% elif msg.message_type == 'image' %}
+                                <img src="{{ url_for('static', filename='uploads/chat/' + msg.content) }}"
+                                     class="chat-img" onclick="openImgModal(this.src)" alt="foto">
+                            {% elif msg.message_type == 'audio' %}
+                                <div class="chat-audio">
+                                    <audio controls>
+                                        <source src="{{ url_for('static', filename='uploads/chat/' + msg.content) }}">
+                                    </audio>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="msg-meta">
+                    <span class="msg-time">{{ msg.created_at.strftime('%H:%M') }}</span>
+                    {% if is_mine %}
+                    <span class="read-receipt">{% if msg.is_read %}✓✓{% else %}✓{% endif %}</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        <div class="typing-indicator" id="typingIndicator">
+            <div class="typing-dots">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+            mengetik...
+        </div>
+    </div>
+
+    <!-- Reply bar -->
+    <div class="reply-bar" id="replyBar">
+        <div style="color:var(--pink);flex-shrink:0;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+        </div>
+        <div class="reply-bar-content">
+            <p class="reply-bar-sender" id="replyBarSender"></p>
+            <p class="reply-bar-text" id="replyBarText"></p>
+        </div>
+        <button class="reply-close" onclick="cancelReply()">×</button>
+    </div>
+
+    <!-- Input area -->
+    <div class="chat-input-area">
+        <div class="recording-indicator" id="recordingIndicator">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+            Sedang merekam...
+        </div>
+        <div class="chat-input-row">
+            <div class="chat-input-wrapper">
+                <!-- Attach foto -->
+                <label class="input-action-btn" title="Kirim Foto">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <input type="file" accept="image/*" style="display:none" onchange="uploadFile(this)">
+                </label>
+                <textarea class="chat-input" id="chatInput"
+                    placeholder="Ketik pesan..." rows="1"
+                    onkeydown="handleKeydown(event)"
+                    oninput="autoResize(this); handleTyping()"></textarea>
+                <!-- Voice note -->
+                <button class="input-action-btn" id="voiceBtn" title="Pesan Suara"
+                        onmousedown="startRecording()" onmouseup="stopRecording()"
+                        ontouchstart="startRecording()" ontouchend="stopRecording()">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+            </div>
+            <button class="btn-send-chat" onclick="sendMessage()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" id="contextMenu">
+    <div class="context-item" onclick="replyMessage()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 00-4-4H4"/></svg>
+        Balas
+    </div>
+    <div class="context-item" onclick="copyMessage()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+        Salin
+    </div>
+    <div class="context-item edit-option" onclick="editMessage()" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Edit Pesan
+    </div>
+    <div class="context-item danger delete-me-option" onclick="deleteMessage('me')" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        Hapus untuk Saya
+    </div>
+    <div class="context-item danger delete-all-option" onclick="deleteMessage('all')" style="display:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/></svg>
+        Hapus untuk Semua
+    </div>
+</div>
+
+<!-- Image Modal -->
+<div class="img-modal" id="imgModal" onclick="closeImgModal()">
+    <button class="img-modal-close">×</button>
+    <img id="imgModalSrc" src="" alt="">
+</div>
+
+<!-- INCOMING CALL MODAL -->
+<div class="call-modal" id="incomingCallModal">
+    <div class="call-modal-card">
+        <div class="call-avatar-wrapper">
+            <img src="{{ url_for('static', filename='uploads/profiles/' + other_user.profile_photo) }}"
+                 onerror="this.src='https://ui-avatars.com/api/?name={{ other_user.username }}&background=ff2d78&color=fff&size=200'"
+                 class="call-avatar-large" alt="">
+            <div class="call-pulse"></div>
+        </div>
+        <p class="call-username">{{ other_user.username }}</p>
+        <p class="call-status" id="incomingCallType">Panggilan Suara Masuk...</p>
+        <div class="call-actions">
+            <button class="call-btn reject" onclick="rejectCall()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.07 9.8a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+            </button>
+            <button class="call-btn accept" onclick="acceptCall()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ACTIVE CALL MODAL -->
+<div class="call-modal" id="activeCallModal">
+    <div class="call-modal-card">
+        <!-- Video elements -->
+        <div class="video-container" id="videoContainer" style="display:none;">
+            <video id="remoteVideo" autoplay playsinline class="remote-video"></video>
+            <video id="localVideo" autoplay playsinline muted class="local-video"></video>
+        </div>
+
+        <!-- Audio call UI -->
+        <div id="audioCallUI">
+            <div class="call-avatar-wrapper">
+                <img src="{{ url_for('static', filename='uploads/profiles/' + other_user.profile_photo) }}"
+                     onerror="this.src='https://ui-avatars.com/api/?name={{ other_user.username }}&background=ff2d78&color=fff&size=200'"
+                     class="call-avatar-large" alt="">
+                <div class="call-pulse"></div>
+            </div>
+            <p class="call-username">{{ other_user.username }}</p>
+            <p class="call-status" id="callDuration">00:00</p>
+        </div>
+
+        <!-- Call controls -->
+        <div class="call-controls">
+            <button class="call-ctrl-btn" id="muteBtn" onclick="toggleMute()" title="Mute">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </button>
+            <button class="call-ctrl-btn" id="speakerBtn" onclick="toggleSpeaker()" title="Speaker">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
+            </button>
+            <button class="call-ctrl-btn" id="videoBtn" onclick="toggleVideo()" title="Video" style="display:none;">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            </button>
+            <button class="call-btn reject" onclick="endCall()">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.68 13.31a16 16 0 003.41 2.6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.42 19.42 0 013.07 9.8a19.79 19.79 0 01-3.07-8.63A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91"/><line x1="23" y1="1" x2="1" y2="23"/></svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<script>
+    const roomId = {{ room.id }};
+    const currentUserId = {{ current_user.id }};
+    const otherUsername = "{{ other_user.username }}";
+    const otherPhoto = "{{ url_for('static', filename='uploads/profiles/' + other_user.profile_photo) }}";
+
+    const socket = io();
+    const messagesArea = document.getElementById('messagesArea');
+    const chatInput = document.getElementById('chatInput');
+
+    let replyToId = null;
+    let activeContextMsgId = null;
+    let activeContextIsMine = false;
+    let activeContextType = 'text';
+    let mediaRecorder = null;
+    let audioChunks = [];
+
+    socket.emit('join', { room_id: roomId });
+
+    // Scroll ke bawah
+    function scrollToBottom(smooth = false) {
+        messagesArea.scrollTo({ top: messagesArea.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+    }
+    scrollToBottom();
+
+    // Terima pesan
+    socket.on('receive_message', function(data) {
+        if (data.sender_id !== currentUserId) {
+            appendMessage(data);
+            scrollToBottom(true);
+            socket.emit('message_read', { room_id: roomId });
+        }
+    });
+
+    // Pesan diedit
+    socket.on('message_edited', function(data) {
+        const el = document.querySelector(`#msg-${data.msg_id} .bubble`);
+        if (el) {
+            el.innerHTML = data.content + ' <span style="font-size:0.65rem;opacity:0.6;"> (diedit)</span>';
+        }
+    });
+
+    // Pesan dihapus
+    socket.on('message_deleted', function(data) {
+        const el = document.getElementById(`msg-${data.msg_id}`);
+        if (el && data.type === 'all') {
+            const bubble = el.querySelector('.bubble');
+            if (bubble) {
+                bubble.classList.add('deleted');
+                bubble.innerHTML = '🚫 Pesan ini telah dihapus';
+            }
+        }
+    });
+
+    // Typing
+    socket.on('user_typing', function() {
+        document.getElementById('typingIndicator').style.display = 'flex';
+        scrollToBottom(true);
+    });
+
+    socket.on('user_stop_typing', function() {
+        document.getElementById('typingIndicator').style.display = 'none';
+    });
+
+    // Read receipt
+    socket.on('messages_read', function() {
+        document.querySelectorAll('.read-receipt').forEach(el => el.textContent = '✓✓');
+    });
+
+    // Append pesan baru
+    function appendMessage(data) {
+        const isMine = data.sender_id === currentUserId;
+        const div = document.createElement('div');
+        div.className = `msg-wrapper ${isMine ? 'mine' : 'theirs'}`;
+        div.id = `msg-${data.id}`;
+        div.setAttribute('oncontextmenu', `showContext(event, ${data.id}, ${isMine}, '${data.type || 'text'}')`);
+
+        let replyHTML = '';
+        if (data.reply) {
+            replyHTML = `<div class="reply-preview">
+                <p class="reply-preview-sender">${data.reply.sender}</p>
+                <p class="reply-preview-content">${data.reply.content}</p>
+            </div>`;
+        }
+
+        let contentHTML = '';
+        if (data.type === 'image') {
+            contentHTML = `<img src="/static/uploads/chat/${data.content}" class="chat-img" onclick="openImgModal(this.src)" alt="foto">`;
+        } else if (data.type === 'audio') {
+            contentHTML = `<div class="chat-audio"><audio controls><source src="/static/uploads/chat/${data.content}"></audio></div>`;
+        } else {
+            contentHTML = data.content;
+        }
+
+        div.innerHTML = `
+            <div class="msg-row">
+                ${!isMine ? `<img src="${otherPhoto}" onerror="this.src='https://ui-avatars.com/api/?name=${otherUsername}&background=ff2d78&color=fff&size=100'" class="msg-avatar" alt="">` : ''}
+                <div>
+                    ${replyHTML}
+                    <div class="bubble">${contentHTML}</div>
+                </div>
+            </div>
+            <div class="msg-meta">
+                <span class="msg-time">${data.time}</span>
+                ${isMine ? '<span class="read-receipt">✓</span>' : ''}
+            </div>
+        `;
+        messagesArea.insertBefore(div, document.getElementById('typingIndicator'));
+    }
+
+    // Kirim pesan teks
+    function sendMessage() {
+        const content = chatInput.value.trim();
+        if (!content) return;
+
+        const now = new Date();
+        const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+
+        appendMessage({
+            id: Date.now(),
+            content,
+            type: 'text',
+            sender_id: currentUserId,
+            time,
+            reply: replyToId ? { sender: document.getElementById('replyBarSender').textContent, content: document.getElementById('replyBarText').textContent } : null
+        });
+
+        socket.emit('send_message', { room_id: roomId, content, reply_to_id: replyToId });
+
+        chatInput.value = '';
+        chatInput.style.height = 'auto';
+        cancelReply();
+        scrollToBottom(true);
+    }
+
+    // Enter kirim
+    function handleKeydown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    }
+
+    // Auto resize textarea
+    function autoResize(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 100) + 'px';
+    }
+
+    // Typing indicator
+    let typingTimeout;
+    function handleTyping() {
+        socket.emit('typing', { room_id: roomId, username: '{{ current_user.username }}' });
+        clearTimeout(typingTimeout);
+        typingTimeout = setTimeout(() => socket.emit('stop_typing', { room_id: roomId }), 1500);
+    }
+
+    // Upload foto
+    function uploadFile(input) {
+        if (!input.files[0]) return;
+        const formData = new FormData();
+        formData.append('file', input.files[0]);
+        fetch(`/chat/upload/${roomId}`, { method: 'POST', body: formData })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                const now = new Date();
+                const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+                appendMessage({ id: data.msg_id, content: data.filename, type: data.type, sender_id: currentUserId, time });
+                scrollToBottom(true);
+            }
+        });
+        input.value = '';
+    }
+
+    // Voice recording
+    async function startRecording() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+            mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+            mediaRecorder.start();
+            document.getElementById('recordingIndicator').style.display = 'flex';
+        } catch (e) {
+            alert('Izinkan akses mikrofon terlebih dahulu!');
+        }
+    }
+
+    function stopRecording() {
+        if (!mediaRecorder) return;
+        mediaRecorder.stop();
+        document.getElementById('recordingIndicator').style.display = 'none';
+        mediaRecorder.onstop = () => {
+            const blob = new Blob(audioChunks, { type: 'audio/ogg' });
+            const formData = new FormData();
+            formData.append('file', blob, 'voice.ogg');
+            fetch(`/chat/upload/${roomId}`, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const now = new Date();
+                    const time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+                    appendMessage({ id: data.msg_id, content: data.filename, type: 'audio', sender_id: currentUserId, time });
+                    scrollToBottom(true);
+                }
+            });
+            mediaRecorder.stream.getTracks().forEach(t => t.stop());
+        };
+    }
+
+    // Context menu (klik kanan)
+    function showContext(e, msgId, isMine, msgType) {
+        e.preventDefault();
+        activeContextMsgId = msgId;
+        activeContextIsMine = isMine;
+        activeContextType = msgType;
+
+        const menu = document.getElementById('contextMenu');
+        menu.style.display = 'block';
+        menu.style.left = Math.min(e.clientX, window.innerWidth - 180) + 'px';
+        menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+
+        document.querySelector('.edit-option').style.display = isMine && msgType === 'text' ? 'flex' : 'none';
+        document.querySelector('.delete-me-option').style.display = 'flex';
+        document.querySelector('.delete-all-option').style.display = isMine ? 'flex' : 'none';
+    }
+
+    document.addEventListener('click', () => {
+        document.getElementById('contextMenu').style.display = 'none';
+    });
+
+    function replyMessage() {
+        const msgEl = document.getElementById(`msg-${activeContextMsgId}`);
+        const bubble = msgEl?.querySelector('.bubble');
+        if (!bubble) return;
+
+        replyToId = activeContextMsgId;
+        const sender = activeContextIsMine ? '{{ current_user.username }}' : otherUsername;
+        document.getElementById('replyBarSender').textContent = sender;
+        document.getElementById('replyBarText').textContent = bubble.textContent.trim().substring(0, 60);
+        document.getElementById('replyBar').classList.add('show');
+        chatInput.focus();
+    }
+
+    function cancelReply() {
+        replyToId = null;
+        document.getElementById('replyBar').classList.remove('show');
+    }
+
+    function copyMessage() {
+        const bubble = document.querySelector(`#msg-${activeContextMsgId} .bubble`);
+        if (bubble) navigator.clipboard.writeText(bubble.textContent.trim());
+    }
+
+    function editMessage() {
+        const bubble = document.querySelector(`#msg-${activeContextMsgId} .bubble`);
+        if (!bubble) return;
+
+        const originalText = bubble.textContent.trim();
+        bubble.innerHTML = `<input class="edit-input" value="${originalText}" onblur="saveEdit(${activeContextMsgId}, this)" onkeydown="if(event.key==='Enter'){this.blur()}">`;
+        bubble.querySelector('input').focus();
+    }
+
+    function saveEdit(msgId, input) {
+        const newContent = input.value.trim();
+        if (!newContent) return;
+        fetch(`/chat/edit/${msgId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ content: newContent })
+        });
+    }
+
+    function deleteMessage(type) {
+        fetch(`/chat/delete/${activeContextMsgId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type })
+        }).then(r => r.json()).then(d => {
+            if (d.success && type === 'me') {
+                document.getElementById(`msg-${activeContextMsgId}`)?.remove();
+            }
+        });
+    }
+
+    // Image modal
+    function openImgModal(src) {
+        document.getElementById('imgModalSrc').src = src;
+        document.getElementById('imgModal').classList.add('show');
+    }
+
+    function closeImgModal() {
+        document.getElementById('imgModal').classList.remove('show');
+    }
+
+    // Call (placeholder - butuh WebRTC untuk implementasi penuh)
+    function startCall(type) {
+        alert(`Fitur ${type === 'video' ? 'Video Call' : 'Panggilan Suara'} akan segera hadir! 🌹`);
+    }
+
+    // ============ WebRTC CALL ============
+let localStream = null;
+let peerConnection = null;
+let callType = 'audio';
+let isCaller = false;
+let callTimer = null;
+let callSeconds = 0;
+let isMuted = false;
+let isVideoOff = false;
+
+const iceServers = {
+    iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' }
+    ]
+};
+
+// Override fungsi startCall yang sudah ada
+async function startCall(type) {
+    callType = type;
+    isCaller = true;
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: type === 'video'
+        });
+
+        if (type === 'video') {
+            document.getElementById('videoContainer').style.display = 'block';
+            document.getElementById('audioCallUI').style.display = 'none';
+            document.getElementById('videoBtn').style.display = 'flex';
+            document.getElementById('localVideo').srcObject = localStream;
+        }
+
+        peerConnection = new RTCPeerConnection(iceServers);
+
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+
+        peerConnection.ontrack = (e) => {
+            if (type === 'video') {
+                document.getElementById('remoteVideo').srcObject = e.streams[0];
+            } else {
+                const audio = new Audio();
+                audio.srcObject = e.streams[0];
+                audio.play();
+            }
+        };
+
+        peerConnection.onicecandidate = (e) => {
+            if (e.candidate) {
+                socket.emit('ice_candidate', {
+                    room_id: roomId,
+                    candidate: e.candidate
+                });
+            }
+        };
+
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+
+        socket.emit('call_offer', {
+            room_id: roomId,
+            offer: offer,
+            call_type: type
+        });
+
+        document.getElementById('activeCallModal').classList.add('show');
+        document.getElementById('callDuration').textContent = 'Memanggil...';
+        document.getElementById('videoBtn').style.display = type === 'video' ? 'flex' : 'none';
+        startCallTimer();
+
+    } catch (err) {
+        alert('Gagal mengakses kamera/mikrofon. Pastikan izin sudah diberikan!');
+    }
+}
+
+// Terima panggilan masuk
+let incomingOffer = null;
+
+socket.on('incoming_call', function(data) {
+    incomingOffer = data.offer;
+    callType = data.call_type;
+    isCaller = false;
+
+    const typeText = data.call_type === 'video' ? '📹 Video Call Masuk...' : '📞 Panggilan Suara Masuk...';
+    document.getElementById('incomingCallType').textContent = typeText;
+    document.getElementById('incomingCallModal').classList.add('show');
+});
+
+async function acceptCall() {
+    document.getElementById('incomingCallModal').classList.remove('show');
+
+    try {
+        localStream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: callType === 'video'
+        });
+
+        if (callType === 'video') {
+            document.getElementById('videoContainer').style.display = 'block';
+            document.getElementById('audioCallUI').style.display = 'none';
+            document.getElementById('localVideo').srcObject = localStream;
+        }
+
+        peerConnection = new RTCPeerConnection(iceServers);
+
+        localStream.getTracks().forEach(track => {
+            peerConnection.addTrack(track, localStream);
+        });
+
+        peerConnection.ontrack = (e) => {
+            if (callType === 'video') {
+                document.getElementById('remoteVideo').srcObject = e.streams[0];
+            } else {
+                const audio = new Audio();
+                audio.srcObject = e.streams[0];
+                audio.play();
+            }
+        };
+
+        peerConnection.onicecandidate = (e) => {
+            if (e.candidate) {
+                socket.emit('ice_candidate', {
+                    room_id: roomId,
+                    candidate: e.candidate
+                });
+            }
+        };
+
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(incomingOffer));
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+
+        socket.emit('call_answer', { room_id: roomId, answer });
+
+        document.getElementById('activeCallModal').classList.add('show');
+        startCallTimer();
+
+    } catch (err) {
+        alert('Gagal mengakses kamera/mikrofon!');
+    }
+}
+
+function rejectCall() {
+    document.getElementById('incomingCallModal').classList.remove('show');
+    socket.emit('call_rejected', { room_id: roomId });
+}
+
+socket.on('call_answered', async function(data) {
+    if (peerConnection) {
+        await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));
+        document.getElementById('callDuration').textContent = '00:00';
+    }
+});
+
+socket.on('ice_candidate', async function(data) {
+    if (peerConnection && data.candidate) {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));
+    }
+});
+
+socket.on('call_ended', function() {
+    endCall(false);
+});
+
+socket.on('call_rejected', function() {
+    endCall(false);
+    alert('Panggilan ditolak 😢');
+});
+
+function endCall(notify = true) {
+    if (notify) socket.emit('call_ended', { room_id: roomId });
+
+    if (localStream) {
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+    }
+
+    if (peerConnection) {
+        peerConnection.close();
+        peerConnection = null;
+    }
+
+    clearInterval(callTimer);
+    callSeconds = 0;
+
+    document.getElementById('activeCallModal').classList.remove('show');
+    document.getElementById('incomingCallModal').classList.remove('show');
+    document.getElementById('videoContainer').style.display = 'none';
+    document.getElementById('audioCallUI').style.display = 'block';
+    document.getElementById('callDuration').textContent = '00:00';
+
+    isMuted = false;
+    isVideoOff = false;
+    document.getElementById('muteBtn').classList.remove('muted');
+}
+
+function toggleMute() {
+    if (!localStream) return;
+    isMuted = !isMuted;
+    localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+    document.getElementById('muteBtn').classList.toggle('muted', isMuted);
+}
+
+function toggleVideo() {
+    if (!localStream) return;
+    isVideoOff = !isVideoOff;
+    localStream.getVideoTracks().forEach(t => t.enabled = !isVideoOff);
+    document.getElementById('videoBtn').classList.toggle('muted', isVideoOff);
+}
+
+function toggleSpeaker() {
+    document.getElementById('speakerBtn').classList.toggle('muted');
+}
+
+function startCallTimer() {
+    callSeconds = 0;
+    clearInterval(callTimer);
+    callTimer = setInterval(() => {
+        callSeconds++;
+        const m = Math.floor(callSeconds / 60).toString().padStart(2, '0');
+        const s = (callSeconds % 60).toString().padStart(2, '0');
+        const el = document.getElementById('callDuration');
+        if (el) el.textContent = `${m}:${s}`;
+    }, 1000);
+}
+
+</script>
+
+
+
+{% endblock %}

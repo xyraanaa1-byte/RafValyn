@@ -1,0 +1,536 @@
+{% extends 'base.html' %}
+{% block title %}Toko — RafValyn 🌹{% endblock %}
+
+{% block extra_css %}
+<style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+   .shop-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem 3rem;
+}
+
+@media (max-width: 768px) {
+    .shop-wrapper {
+        padding: 1.2rem 1rem;
+    }
+}
+
+    /* Filter bar */
+    .filter-bar {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .search-wrapper {
+        position: relative;
+        flex: 1;
+        min-width: 200px;
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-muted);
+        display: flex;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 0.75rem 1rem 0.75rem 2.8rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-family: 'Lato', sans-serif;
+        font-size: 0.9rem;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        border-color: var(--pink);
+        box-shadow: 0 0 15px var(--pink-glow);
+    }
+
+    .search-input::placeholder { color: var(--text-muted); }
+
+    .filter-select {
+    padding: 0.75rem 2.5rem 0.75rem 1rem;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'Lato', sans-serif;
+    font-size: 0.88rem;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23ff2d78' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.8rem center;
+    backdrop-filter: blur(10px);
+}
+
+.filter-select:focus {
+    border-color: var(--pink);
+    box-shadow: 0 0 15px var(--pink-glow);
+}
+
+.filter-select:hover {
+    border-color: var(--pink);
+    background-color: var(--bg-card-hover);
+}
+
+/* Option styling */
+.filter-select option {
+    background: #1a0010;
+    color: white;
+    padding: 0.5rem;
+}
+    .filter-select:focus { border-color: var(--pink); }
+
+    /* Kategori pills */
+    .category-pills {
+        display: flex;
+        gap: 0.6rem;
+        margin-bottom: 1.5rem;
+        overflow-x: auto;
+        padding-bottom: 0.3rem;
+        scrollbar-width: none;
+    }
+
+    .category-pills::-webkit-scrollbar { display: none; }
+
+    .pill {
+        flex-shrink: 0;
+        padding: 0.5rem 1.2rem;
+        border-radius: 50px;
+        font-size: 0.82rem;
+        border: 1px solid var(--border);
+        background: var(--bg-card);
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .pill:hover, .pill.active {
+        background: var(--pink);
+        border-color: var(--pink);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px var(--pink-glow);
+    }
+
+    /* Info bar */
+    .info-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+    }
+
+    .result-count {
+        font-size: 0.85rem;
+        color: var(--text-muted);
+    }
+
+    /* Grid produk */
+    .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .product-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        position: relative;
+    }
+
+    .product-card:hover {
+        border-color: var(--pink);
+        transform: translateY(-5px);
+        box-shadow: 0 15px 35px var(--pink-glow);
+    }
+
+    .product-img-wrapper {
+        position: relative;
+        aspect-ratio: 1;
+        background: var(--bg-secondary);
+        overflow: hidden;
+    }
+
+    .product-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .product-card:hover .product-img {
+        transform: scale(1.05);
+    }
+
+    .product-img-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+    }
+
+    .product-badge {
+        position: absolute;
+        top: 0.7rem;
+        left: 0.7rem;
+        background: var(--pink);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+    }
+
+    .product-cod {
+        position: absolute;
+        top: 0.7rem;
+        right: 0.7rem;
+        background: rgba(64,145,108,0.9);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+    }
+
+    .product-info { padding: 0.9rem; }
+
+    .product-name {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.3rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .product-rating {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-bottom: 0.4rem;
+    }
+
+    .stars { color: #ffd700; font-size: 0.75rem; }
+    .rating-count { font-size: 0.72rem; color: var(--text-muted); }
+
+    .product-price {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--pink);
+        margin-bottom: 0.2rem;
+    }
+
+    .product-sold {
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        margin-bottom: 0.7rem;
+    }
+
+    .btn-add-cart {
+        width: 100%;
+        padding: 0.6rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 0.82rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .btn-add-cart:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    /* Pagination */
+    .pagination {
+        display: flex;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 2rem;
+    }
+
+    .page-btn {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 10px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .page-btn:hover, .page-btn.active {
+        background: var(--pink);
+        border-color: var(--pink);
+        color: white;
+    }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-muted);
+        grid-column: 1/-1;
+    }
+
+    .empty-icon { font-size: 4rem; margin-bottom: 1rem; }
+
+    /* Toast */
+    .toast {
+        position: fixed;
+        bottom: 2rem;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--pink);
+        color: white;
+        padding: 0.8rem 1.5rem;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        z-index: 9999;
+        box-shadow: 0 8px 25px var(--pink-glow);
+        animation: slideUp 0.3s ease;
+        display: none;
+    }
+
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+        to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+        .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.8rem; }
+        .filter-bar { gap: 0.6rem; }
+    }
+
+    @media (max-width: 400px) {
+        .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+        .shop-wrapper { padding: 1rem; }
+    }
+
+    .category-icon i, .pill i {
+    font-size: 1.4rem;
+    color: var(--pink);
+    transition: all 0.3s ease;
+}
+
+.category-card:hover .category-icon i,
+.category-card.active .category-icon i {
+    color: var(--pink);
+    filter: drop-shadow(0 0 8px rgba(255,45,120,0.6));
+}
+
+.pill i {
+    font-size: 0.85rem;
+}
+
+.pill.active i, .pill:hover i {
+    color: white;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="shop-wrapper">
+
+    <!-- Header -->
+    <div style="margin-bottom:1.5rem;">
+        <h1 style="font-family:'Playfair Display',serif;font-size:1.8rem;color:var(--text);">
+            Toko <span style="color:var(--pink);font-style:italic;">Valentine</span>
+        </h1>
+        <p style="color:var(--text-muted);font-size:0.88rem;margin-top:0.3rem;">Temukan hadiah sempurna untuk orang tersayang 🌹</p>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <form method="GET" action="{{ url_for('shop.products') }}" style="display:contents;">
+            <div class="search-wrapper">
+                <span class="search-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </span>
+                <input type="text" name="search" class="search-input" placeholder="Cari produk..." value="{{ search }}">
+            </div>
+            <select name="sort" class="filter-select" onchange="this.form.submit()">
+                <option value="terlaris" {% if sort=='terlaris' %}selected{% endif %}>Terlaris</option>
+                <option value="terbaru" {% if sort=='terbaru' %}selected{% endif %}>Terbaru</option>
+                <option value="termurah" {% if sort=='termurah' %}selected{% endif %}>Termurah</option>
+                <option value="termahal" {% if sort=='termahal' %}selected{% endif %}>Termahal</option>
+            </select>
+            <input type="hidden" name="category" value="{{ category }}">
+        </form>
+    </div>
+
+    <!-- Kategori Pills -->
+    <div class="category-pills">
+       <a href="{{ url_for('shop.products') }}" class="pill {% if not category %}active{% endif %}">
+    <i class="fa-solid fa-store"></i> Semua
+</a>
+<a href="{{ url_for('shop.products', category='bunga') }}" class="pill {% if category=='bunga' %}active{% endif %}">
+    <i class="fa-solid fa-seedling"></i> Bunga
+</a>
+<a href="{{ url_for('shop.products', category='coklat') }}" class="pill {% if category=='coklat' %}active{% endif %}">
+    <i class="fa-solid fa-cookie-bite"></i> Coklat
+</a>
+<a href="{{ url_for('shop.products', category='boneka') }}" class="pill {% if category=='boneka' %}active{% endif %}">
+    <i class="fa-solid fa-person-rays"></i> Boneka
+</a>
+<a href="{{ url_for('shop.products', category='perhiasan') }}" class="pill {% if category=='perhiasan' %}active{% endif %}">
+    <i class="fa-solid fa-gem"></i> Perhiasan
+</a>
+<a href="{{ url_for('shop.products', category='parfum') }}" class="pill {% if category=='parfum' %}active{% endif %}">
+    <i class="fa-solid fa-spray-can-sparkles"></i> Parfum
+</a>
+<a href="{{ url_for('shop.products', category='kartu') }}" class="pill {% if category=='kartu' %}active{% endif %}">
+    <i class="fa-solid fa-envelope-open-text"></i> Kartu
+</a>
+<a href="{{ url_for('shop.products', category='paket') }}" class="pill {% if category=='paket' %}active{% endif %}">
+    <i class="fa-solid fa-gift"></i> Paket
+</a>
+    </div>
+
+    <!-- Info Bar -->
+    <div class="info-bar">
+        <p class="result-count">
+            Menampilkan <strong>{{ products.total }}</strong> produk
+            {% if category %} kategori <strong>{{ category }}</strong>{% endif %}
+            {% if search %} untuk <strong>"{{ search }}"</strong>{% endif %}
+        </p>
+    </div>
+
+    <!-- Grid Produk -->
+    <div class="products-grid">
+        {% if products.items %}
+            {% for product in products.items %}
+           <div class="product-card" onclick="window.location.href='{{ url_for('shop.product_detail', product_id=product.id) }}'">
+                <div class="product-img-wrapper">
+                    {% if product.image and product.image != 'default_product.jpg' %}
+                        <img src="{{ url_for('static', filename='uploads/products/' + product.image) }}"
+                             alt="{{ product.name }}" class="product-img">
+                    {% else %}
+                        <div class="product-img-placeholder">🎁</div>
+                    {% endif %}
+                    {% if product.sold_count > 10 %}
+                    <span class="product-badge">🔥 Laris</span>
+                    {% endif %}
+                    {% if product.is_cod %}
+                    <span class="product-cod">COD</span>
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <p class="product-name">{{ product.name }}</p>
+                    <div class="product-rating">
+                        <span class="stars">★★★★★</span>
+                        <span class="rating-count">({{ product.sold_count }})</span>
+                    </div>
+                    <p class="product-price">Rp {{ "{:,.0f}".format(product.price) }}</p>
+                    <p class="product-sold">{{ product.sold_count }} terjual</p>
+                   
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🔍</div>
+                <p style="font-size:1rem;margin-bottom:0.5rem;">Produk tidak ditemukan</p>
+                <p style="font-size:0.85rem;">Coba kata kunci lain atau kategori berbeda</p>
+                <a href="{{ url_for('shop.products') }}" style="display:inline-block;margin-top:1rem;padding:0.6rem 1.5rem;background:var(--pink);color:white;border-radius:10px;font-size:0.85rem;">Lihat Semua Produk</a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Pagination -->
+    {% if products.pages > 1 %}
+    <div class="pagination">
+        {% if products.has_prev %}
+        <a href="{{ url_for('shop.products', page=products.prev_num, category=category, search=search, sort=sort) }}" class="page-btn">‹</a>
+        {% endif %}
+        {% for page_num in products.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+            {% if page_num %}
+                <a href="{{ url_for('shop.products', page=page_num, category=category, search=search, sort=sort) }}"
+                   class="page-btn {% if page_num == products.page %}active{% endif %}">{{ page_num }}</a>
+            {% else %}
+                <span class="page-btn">...</span>
+            {% endif %}
+        {% endfor %}
+        {% if products.has_next %}
+        <a href="{{ url_for('shop.products', page=products.next_num, category=category, search=search, sort=sort) }}" class="page-btn">›</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- Toast notifikasi -->
+<div class="toast" id="toast"></div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function addToCart(productId) {
+        fetch(`/cart/add/${productId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                updateCartBadge(data.cart_count);
+                showToast('Ditambahkan ke keranjang! 🛍️');
+            }
+        });
+    }
+
+    function updateCartBadge(count) {
+        const badges = document.querySelectorAll('#cartBadge, #cartBadgeBottom');
+        badges.forEach(b => {
+            if (b) { b.textContent = count; b.classList.toggle('show', count > 0); }
+        });
+    }
+
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.style.display = 'block';
+        setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
+
+    // Load cart count
+    fetch('/cart/count').then(r => r.json()).then(d => updateCartBadge(d.count));
+</script>
+{% endblock %}

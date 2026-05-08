@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+{% block title %}Detail Pesanan #{{ order.id }} — RafValyn 🌹{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-wrapper {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem 3rem;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.4rem;
+        color: var(--text);
+    }
+
+    .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 1.2rem;
+    }
+
+    .info-card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    /* Status timeline */
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: var(--border);
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.2rem;
+        opacity: 0.4;
+    }
+
+    .timeline-item.done { opacity: 1; }
+    .timeline-item.current { opacity: 1; }
+
+    .timeline-dot {
+        position: absolute;
+        left: -2rem;
+        top: 0;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: var(--border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+    }
+
+    .timeline-item.done .timeline-dot { background: #40916c; }
+    .timeline-item.current .timeline-dot { background: var(--pink); animation: pulse 1.5s infinite; }
+
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,120,0.4); }
+        50% { box-shadow: 0 0 0 8px rgba(255,45,120,0); }
+    }
+
+    .timeline-title { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .timeline-desc { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+
+    /* Item pesanan */
+    .order-item-row {
+        display: flex;
+        gap: 1rem;
+        align-items: center;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .order-item-row:last-child { border-bottom: none; }
+
+    .item-img {
+        width: 60px;
+        height: 60px;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        flex-shrink: 0;
+        overflow: hidden;
+    }
+
+    .item-img img { width: 100%; height: 100%; object-fit: cover; }
+
+    .item-info { flex: 1; }
+    .item-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .item-qty { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; }
+    .item-price { font-size: 0.92rem; color: var(--pink); font-weight: 700; }
+
+    /* Info rows */
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.88rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--border);
+        color: var(--text-secondary);
+    }
+
+    .info-row:last-child { border-bottom: none; }
+    .info-row strong { color: var(--text); }
+
+    /* Total */
+    .total-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        padding-top: 1rem;
+        border-top: 2px solid var(--border);
+        margin-top: 0.5rem;
+    }
+
+    .total-row span:last-child { color: var(--pink); }
+
+    /* Tombol lacak */
+    .btn-track {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        width: 100%;
+        padding: 0.9rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-decoration: none;
+        margin-top: 1rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 6px 20px var(--pink-glow);
+    }
+
+    .btn-track:hover { transform: translateY(-2px); color: white; box-shadow: 0 10px 30px var(--pink-glow); }
+
+    @media (max-width: 768px) {
+        .detail-wrapper { padding: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-wrapper">
+
+    <div class="page-header">
+        <a href="{{ url_for('order.history') }}" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <h1>Detail Pesanan #{{ order.id }}</h1>
+    </div>
+
+    <!-- Status Pengiriman -->
+    <div class="info-card">
+        <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Status Pengiriman
+        </h3>
+        <div class="timeline">
+            <div class="timeline-item {% if order.shipping_status in ['waiting','packed','picked_up','on_the_way','delivered'] %}done{% endif %}">
+                <div class="timeline-dot">✓</div>
+                <p class="timeline-title">Pesanan Dibuat</p>
+                <p class="timeline-desc">{{ order.created_at.strftime('%d %B %Y, %H:%M') }}</p>
+            </div>
+            <div class="timeline-item {% if order.shipping_status in ['packed','picked_up','on_the_way','delivered'] %}done{% elif order.shipping_status == 'waiting' %}current{% endif %}">
+                <div class="timeline-dot">📦</div>
+                <p class="timeline-title">Pesanan Dikemas</p>
+                <p class="timeline-desc">Penjual sedang mengemas produk</p>
+            </div>
+            <div class="timeline-item {% if order.shipping_status in ['on_the_way','delivered'] %}done{% elif order.shipping_status == 'picked_up' %}current{% endif %}">
+                <div class="timeline-dot">🚚</div>
+                <p class="timeline-title">Dijemput Kurir</p>
+                <p class="timeline-desc">Paket sudah diambil kurir</p>
+            </div>
+            <div class="timeline-item {% if order.shipping_status == 'delivered' %}done{% elif order.shipping_status == 'on_the_way' %}current{% endif %}">
+                <div class="timeline-dot">🛵</div>
+                <p class="timeline-title">Dalam Perjalanan</p>
+                <p class="timeline-desc">Paket sedang dikirim ke alamatmu</p>
+            </div>
+            <div class="timeline-item {% if order.shipping_status == 'delivered' %}done{% endif %}">
+                <div class="timeline-dot">✅</div>
+                <p class="timeline-title">Pesanan Tiba</p>
+                <p class="timeline-desc">Paket telah diterima</p>
+            </div>
+        </div>
+
+        {% if order.shipping_status == 'on_the_way' %}
+        <a href="{{ url_for('tracking.track', order_id=order.id) }}" class="btn-track">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Lacak Pengiriman di Peta
+        </a>
+        {% endif %}
+    </div>
+
+    <!-- Item Pesanan -->
+    <div class="info-card">
+        <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            Item Pesanan
+        </h3>
+        {% for item in order.items %}
+        <div class="order-item-row">
+            <div class="item-img">
+                {% if item.product.image and item.product.image != 'default_product.jpg' %}
+                    <img src="{{ url_for('static', filename='uploads/products/' + item.product.image) }}" alt="">
+                {% else %}
+                    🎁
+                {% endif %}
+            </div>
+            <div class="item-info">
+                <p class="item-name">{{ item.product.name }}</p>
+                <p class="item-qty">x{{ item.quantity }}</p>
+            </div>
+            <p class="item-price">Rp {{ "{:,.0f}".format(item.price * item.quantity) }}</p>
+        </div>
+        {% endfor %}
+        <div class="total-row">
+            <span>Total</span>
+            <span>Rp {{ "{:,.0f}".format(order.total_price) }}</span>
+        </div>
+    </div>
+
+    <!-- Info Pengiriman -->
+    <div class="info-card">
+        <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Info Pengiriman
+        </h3>
+        <div class="info-row">
+            <span>Alamat</span>
+            <strong style="max-width:60%;text-align:right;">{{ order.delivery_address }}</strong>
+        </div>
+        <div class="info-row">
+            <span>Metode Bayar</span>
+            <strong>{{ order.payment_method.upper() }}</strong>
+        </div>
+        <div class="info-row">
+            <span>COD</span>
+            <strong>{{ 'Ya' if order.is_cod else 'Tidak' }}</strong>
+        </div>
+        <div class="info-row">
+            <span>Status Bayar</span>
+            <strong style="color:{% if order.payment_status == 'paid' %}#40916c{% else %}#ffd700{% endif %};">
+                {{ 'Lunas' if order.payment_status == 'paid' else 'Menunggu Pembayaran' }}
+            </strong>
+        </div>
+        {% if order.notes %}
+        <div class="info-row">
+            <span>Catatan</span>
+            <strong>{{ order.notes }}</strong>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

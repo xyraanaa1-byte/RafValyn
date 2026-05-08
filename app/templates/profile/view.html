@@ -1,0 +1,393 @@
+{% extends 'base.html' %}
+{% block title %}Profil — RafValyn 🌹{% endblock %}
+
+{% block extra_css %}
+<style>
+    .profile-wrapper {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    /* Cover */
+    .profile-cover {
+        height: 200px;
+        border-radius: 20px 20px 0 0;
+        background: linear-gradient(135deg, #3d0020, #1a0010, #2d0018);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .profile-cover::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(ellipse at 70% 50%, rgba(255,45,120,0.3) 0%, transparent 70%);
+    }
+
+    .cover-hearts {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding: 2rem;
+        font-size: 5rem;
+        opacity: 0.15;
+    }
+
+    /* Card profil */
+    .profile-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 0 0 20px 20px;
+        padding: 0 2rem 2rem;
+        backdrop-filter: blur(10px);
+        margin-bottom: 1.5rem;
+    }
+
+    /* Avatar */
+    .avatar-wrapper {
+        position: relative;
+        display: inline-block;
+        margin-top: -60px;
+        margin-bottom: 1rem;
+    }
+
+    .profile-avatar-large {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid var(--pink);
+        box-shadow: 0 0 30px rgba(255,45,120,0.4);
+    }
+
+    .online-dot {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        width: 18px;
+        height: 18px;
+        background: #40916c;
+        border-radius: 50%;
+        border: 3px solid var(--bg);
+    }
+
+    /* Info profil */
+    .profile-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .profile-info h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.8rem;
+        color: var(--text);
+        margin-bottom: 0.3rem;
+    }
+
+    .profile-email {
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .profile-bio {
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        max-width: 500px;
+    }
+
+    .profile-badges {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.7rem;
+    }
+
+    .badge-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.8rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        background: rgba(255,45,120,0.1);
+        border: 1px solid rgba(255,45,120,0.2);
+        color: var(--pink);
+    }
+
+    .btn-edit {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.7rem 1.5rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border-radius: 12px;
+        font-size: 0.88rem;
+        font-weight: 700;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px var(--pink-glow);
+        white-space: nowrap;
+    }
+
+    .btn-edit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px var(--pink-glow);
+        color: white;
+    }
+
+    /* Stats */
+    .profile-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1rem;
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .stat-item {
+        text-align: center;
+    }
+
+    .stat-num {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.5rem;
+        color: var(--pink);
+        font-weight: 700;
+    }
+
+    .stat-lbl {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        margin-top: 0.2rem;
+    }
+
+    /* Info detail */
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.2rem;
+        backdrop-filter: blur(10px);
+        transition: all 0.3s ease;
+    }
+
+    .info-card:hover {
+        border-color: var(--pink);
+        transform: translateY(-2px);
+    }
+
+    .info-label {
+        font-size: 0.75rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.4rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+
+    .info-value {
+        font-size: 0.95rem;
+        color: var(--text);
+        font-weight: 400;
+    }
+
+    .info-empty {
+        color: var(--text-muted);
+        font-style: italic;
+        font-size: 0.85rem;
+    }
+
+    /* Pesanan terakhir */
+    .section-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.5rem;
+        backdrop-filter: blur(10px);
+        margin-bottom: 1.5rem;
+    }
+
+    .section-card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        color: var(--text);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        color: var(--text-muted);
+    }
+
+    .empty-state .empty-icon {
+        font-size: 3rem;
+        margin-bottom: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .info-grid { grid-template-columns: 1fr; }
+        .profile-stats { grid-template-columns: repeat(3, 1fr); }
+        .profile-header { flex-direction: column; }
+        .profile-info h1 { font-size: 1.4rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="profile-wrapper">
+
+    <!-- Cover -->
+    <div class="profile-cover">
+        <div class="cover-hearts">
+      <img
+        src="{{ url_for('static', filename='uploads/cinta.png') }}"
+        alt="Logo RafValyn"
+        style="
+          width: 300px;
+          height: auto;
+          filter: drop-shadow(0 0 30px rgba(255, 45, 120, 0.6));
+        "
+      />
+    </div>
+    </div>
+
+    <!-- Card Profil -->
+    <div class="profile-card">
+        <div class="avatar-wrapper">
+            <img src="{{ url_for('static', filename='uploads/profiles/' + user.profile_photo) }}"
+                 onerror="this.src='https://ui-avatars.com/api/?name={{ user.username }}&background=ff2d78&color=fff&size=200'"
+                 alt="Foto Profil"
+                 class="profile-avatar-large">
+            <div class="online-dot"></div>
+        </div>
+
+        <div class="profile-header">
+            <div class="profile-info">
+                <h1>{{ user.username }}</h1>
+                <p class="profile-email">✉ {{ user.email }}</p>
+                <p class="profile-bio">{{ user.bio or 'Belum ada bio. Tambahkan bio di edit profil!' }}</p>
+                <div class="profile-badges">
+                    <span class="badge-item">🌹 Member RafValyn</span>
+                    {% if user.is_admin %}
+                    <span class="badge-item" style="background:rgba(255,215,0,0.1);border-color:rgba(255,215,0,0.3);color:#ffd700;">👑 Admin</span>
+                    {% endif %}
+                    <span class="badge-item">📅 Bergabung {{ user.created_at.strftime('%B %Y') }}</span>
+                </div>
+            </div>
+            <a href="{{ url_for('profile.edit') }}" class="btn-edit">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Edit Profil
+            </a>
+        </div>
+
+        <!-- Stats -->
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-num">{{ user.orders|length }}</div>
+                <div class="stat-lbl">Total Pesanan</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">{{ user.reviews|length }}</div>
+                <div class="stat-lbl">Ulasan</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num">0</div>
+                <div class="stat-lbl">Wishlist</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Detail -->
+    <div class="info-grid">
+       <div class="info-card">
+    <p class="info-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.8a19.79 19.79 0 01-3.07-8.67A2 2 0 012 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 14.92z"/></svg>
+        Nomor HP
+    </p>
+    {% if user.phone %}
+        <p class="info-value">{{ user.phone }}</p>
+    {% else %}
+        <p class="info-empty">Belum diisi</p>
+    {% endif %}
+</div>
+
+<div class="info-card">
+    <p class="info-label">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        Alamat
+    </p>
+    {% if user.address %}
+        <p class="info-value">{{ user.address }}</p>
+    {% else %}
+        <p class="info-empty">Belum diisi</p>
+    {% endif %}
+</div>
+        <div class="info-card">
+            <p class="info-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                Bergabung Sejak
+            </p>
+            <p class="info-value">{{ user.created_at.strftime('%d %B %Y') }}</p>
+        </div>
+        <div class="info-card">
+            <p class="info-label">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+                Login Via
+            </p>
+            <p class="info-value">{{ user.oauth_provider.title() if user.oauth_provider else 'Email & Password' }}</p>
+        </div>
+    </div>
+
+    <!-- Pesanan Terakhir -->
+    <div class="section-card">
+        <h3>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+            Pesanan Terakhir
+        </h3>
+        {% if user.orders %}
+            {% for order in user.orders[-3:] %}
+            <div style="padding:0.8rem;border:1px solid var(--border);border-radius:12px;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <p style="font-size:0.88rem;color:var(--text);font-weight:700;">#ORDER-{{ order.id }}</p>
+                    <p style="font-size:0.78rem;color:var(--text-muted);">{{ order.created_at.strftime('%d %B %Y') }}</p>
+                </div>
+                <div style="text-align:right;">
+                    <p style="font-size:0.88rem;color:var(--pink);font-weight:700;">Rp {{ "{:,.0f}".format(order.total_price) }}</p>
+                    <span style="font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:6px;background:rgba(255,45,120,0.1);color:var(--pink);">{{ order.shipping_status }}</span>
+                </div>
+            </div>
+            {% endfor %}
+            <a href="{{ url_for('order.history') }}" style="display:block;text-align:center;margin-top:1rem;color:var(--pink);font-size:0.85rem;">Lihat Semua Pesanan →</a>
+        {% else %}
+            <div class="empty-state">
+                <div class="empty-icon">🛍️</div>
+                <p>Belum ada pesanan</p>
+                <a href="{{ url_for('shop.products') }}" style="display:inline-block;margin-top:0.8rem;padding:0.6rem 1.5rem;background:var(--pink);color:white;border-radius:10px;font-size:0.85rem;">Mulai Belanja</a>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

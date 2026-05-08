@@ -1,0 +1,1259 @@
+{% extends 'base.html' %}
+{% block title %}{{ spot.name }} — Wisata Valentine RafValyn 🗺️{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+    .detail-page { background: var(--bg); }
+
+    /* ===== HERO FOTO ===== */
+    .spot-hero {
+        position: relative;
+        height: 65vh;
+        min-height: 400px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 10rem;
+    }
+
+    .spot-hero img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(
+            to bottom,
+            rgba(0,0,0,0.1) 0%,
+            rgba(0,0,0,0.2) 40%,
+            rgba(10,0,5,0.95) 100%
+        );
+    }
+
+    .hero-top-bar {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        padding: 1.5rem 2rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        z-index: 10;
+    }
+
+    .hero-back-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 1.2rem;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 50px;
+        color: white;
+        font-size: 0.85rem;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+
+    .hero-back-btn:hover { background: rgba(255,45,120,0.5); color: white; }
+
+    .hero-share-btns {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .hero-action-btn {
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.4);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1rem;
+    }
+
+    .hero-action-btn:hover { background: rgba(255,45,120,0.6); transform: scale(1.1); }
+    .hero-action-btn.liked { background: rgba(255,45,120,0.8); }
+
+    .hero-bottom {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
+        padding: 2rem 2.5rem;
+        z-index: 10;
+    }
+
+    .spot-category-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.3rem 0.9rem;
+        background: rgba(255,45,120,0.8);
+        backdrop-filter: blur(10px);
+        border-radius: 50px;
+        font-size: 0.72rem;
+        color: white;
+        font-weight: 700;
+        text-transform: capitalize;
+        margin-bottom: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .spot-hero-title {
+        font-family: 'Playfair Display', serif;
+        font-size: clamp(1.8rem, 5vw, 3rem);
+        color: white;
+        font-weight: 700;
+        line-height: 1.1;
+        margin-bottom: 0.8rem;
+        text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    }
+
+    .spot-hero-meta {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .hero-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        color: rgba(255,255,255,0.8);
+    }
+
+    /* ===== CONTENT ===== */
+    .detail-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+        display: grid;
+        grid-template-columns: 1fr 380px;
+        gap: 2rem;
+        align-items: start;
+    }
+
+    /* ===== LEFT COLUMN ===== */
+    .detail-left { }
+
+    /* Quick info strip */
+    .quick-info {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
+        margin-bottom: 2rem;
+    }
+
+    .quick-info-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .quick-info-card:hover { border-color: var(--pink); transform: translateY(-2px); }
+
+    .qi-icon { font-size: 1.5rem; margin-bottom: 0.3rem; }
+    .qi-value { font-size: 0.9rem; font-weight: 700; color: var(--text); }
+    .qi-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 0.2rem; }
+
+    /* Info cards */
+    .info-section {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        transition: all 0.3s ease;
+    }
+
+    .info-section:hover { border-color: rgba(255,45,120,0.2); }
+
+    .info-section-title {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        color: var(--text);
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .info-section-title svg { color: var(--pink); }
+
+    .description-text {
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+        line-height: 1.8;
+    }
+
+    /* Rating breakdown */
+    .rating-overview {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+        margin-bottom: 1.2rem;
+    }
+
+    .rating-big {
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .rating-number {
+        font-family: 'Playfair Display', serif;
+        font-size: 4rem;
+        font-weight: 700;
+        color: var(--pink);
+        line-height: 1;
+    }
+
+    .rating-stars-big { font-size: 1.2rem; color: #ffd700; margin: 0.3rem 0; }
+    .rating-count { font-size: 0.78rem; color: var(--text-muted); }
+
+    .rating-bars { flex: 1; }
+
+    .rating-bar-row {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-bottom: 0.4rem;
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+
+    .rating-bar-track {
+        flex: 1;
+        height: 6px;
+        background: var(--border);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .rating-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--pink-light), var(--pink));
+        border-radius: 3px;
+        transition: width 1s ease;
+    }
+
+    /* Fasilitas */
+    .facilities-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 0.6rem;
+    }
+
+    .facility-chip {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.6rem 0.9rem;
+        background: rgba(255,45,120,0.06);
+        border: 1px solid rgba(255,45,120,0.15);
+        border-radius: 12px;
+        font-size: 0.78rem;
+        color: var(--text-secondary);
+        transition: all 0.2s;
+    }
+
+    .facility-chip:hover { background: rgba(255,45,120,0.12); color: var(--pink); }
+    .facility-chip svg { color: var(--pink); flex-shrink: 0; }
+
+    /* Tips */
+    .tips-list { display: flex; flex-direction: column; gap: 0.8rem; }
+
+    .tip-item {
+        display: flex;
+        gap: 0.8rem;
+        align-items: flex-start;
+        padding: 0.8rem;
+        background: rgba(255,193,7,0.05);
+        border: 1px solid rgba(255,193,7,0.15);
+        border-radius: 12px;
+    }
+
+    .tip-icon { font-size: 1.2rem; flex-shrink: 0; }
+    .tip-text { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
+
+    /* Peta */
+    .map-container {
+        border-radius: 16px;
+        overflow: hidden;
+        border: 1px solid var(--border);
+    }
+
+    #spotMap { height: 350px; }
+
+    .route-buttons {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+        flex-wrap: wrap;
+    }
+
+    .route-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        background: var(--bg-secondary);
+        border: 1.5px solid var(--border);
+        color: var(--text-secondary);
+        font-size: 0.8rem;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .route-btn:hover, .route-btn.active {
+        background: var(--pink);
+        border-color: var(--pink);
+        color: white;
+        box-shadow: 0 4px 12px var(--pink-glow);
+    }
+
+    .route-info-box {
+        display: none;
+        padding: 0.8rem 1rem;
+        background: rgba(255,45,120,0.08);
+        border: 1px solid rgba(255,45,120,0.2);
+        border-radius: 12px;
+        margin-bottom: 0.8rem;
+        font-size: 0.85rem;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .route-info-box.show { display: flex; }
+
+    /* Gallery grid */
+    .gallery-mini {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .gallery-mini-item {
+        aspect-ratio: 1;
+        border-radius: 10px;
+        overflow: hidden;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .gallery-mini-item:hover { transform: scale(1.05); }
+    .gallery-mini-item img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Related */
+    .related-scroll {
+        display: flex;
+        gap: 1rem;
+        overflow-x: auto;
+        padding-bottom: 0.5rem;
+        scrollbar-width: none;
+    }
+
+    .related-scroll::-webkit-scrollbar { display: none; }
+
+    .related-card-sm {
+        flex-shrink: 0;
+        width: 180px;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        text-decoration: none;
+        color: var(--text);
+        transition: all 0.3s;
+    }
+
+    .related-card-sm:hover { border-color: var(--pink); transform: translateY(-3px); color: var(--text); }
+
+    .related-img-sm {
+        height: 100px;
+        background: var(--bg-secondary);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 3rem;
+        overflow: hidden;
+    }
+
+    .related-img-sm img { width: 100%; height: 100%; object-fit: cover; }
+    .related-body-sm { padding: 0.7rem; }
+    .related-name-sm { font-size: 0.82rem; font-weight: 700; margin-bottom: 0.2rem; }
+    .related-price-sm { font-size: 0.78rem; color: var(--pink); font-weight: 700; }
+
+    /* ===== RIGHT COLUMN — BOOKING ===== */
+    .booking-sticky {
+        position: sticky;
+        top: 80px;
+    }
+
+    .booking-card-new {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .booking-card-header {
+        padding: 1.5rem;
+        background: linear-gradient(135deg, rgba(255,45,120,0.15), rgba(255,45,120,0.05));
+        border-bottom: 1px solid var(--border);
+    }
+
+    .booking-price-main {
+        font-family: 'Playfair Display', serif;
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--pink);
+        line-height: 1;
+    }
+
+    .booking-price-main span {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        font-weight: 400;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .booking-rating-mini {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+        font-size: 0.82rem;
+        color: var(--text-muted);
+    }
+
+    .booking-form-body { padding: 1.5rem; }
+
+    .book-form-group { margin-bottom: 1rem; }
+
+    .book-label {
+        display: block;
+        font-size: 0.72rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.4rem;
+        font-weight: 700;
+    }
+
+    .book-input {
+        width: 100%;
+        padding: 0.8rem 1rem;
+        background: rgba(255,255,255,0.04);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-family: 'Lato', sans-serif;
+        font-size: 0.88rem;
+        outline: none;
+        transition: all 0.3s;
+    }
+
+    .book-input:focus { border-color: var(--pink); box-shadow: 0 0 15px var(--pink-glow); }
+
+    /* Ticket selector */
+    .ticket-selector { display: flex; flex-direction: column; gap: 0.5rem; }
+
+    .ticket-opt { position: relative; }
+    .ticket-opt input { display: none; }
+
+    .ticket-opt-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 1rem;
+        background: rgba(255,255,255,0.03);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+
+    .ticket-opt input:checked + .ticket-opt-label {
+        border-color: var(--pink);
+        background: rgba(255,45,120,0.1);
+    }
+
+    .ticket-opt-label:hover { border-color: var(--pink); }
+
+    .ticket-opt-info { }
+    .ticket-opt-name { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+    .ticket-opt-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
+    .ticket-opt-price { font-size: 0.92rem; font-weight: 700; color: var(--pink); }
+
+    /* Payment mini grid */
+    .pay-mini-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.4rem;
+    }
+
+    .pay-mini-opt { position: relative; }
+    .pay-mini-opt input { display: none; }
+
+    .pay-mini-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 0.5rem;
+        background: rgba(255,255,255,0.03);
+        border: 1.5px solid var(--border);
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        text-align: center;
+        gap: 0.2rem;
+        transition: all 0.3s;
+    }
+
+    .pay-mini-opt input:checked + .pay-mini-label {
+        border-color: var(--pink);
+        background: rgba(255,45,120,0.1);
+        color: var(--pink);
+        font-weight: 700;
+    }
+
+    .pay-mini-icon { font-size: 1.1rem; }
+
+    /* Price breakdown */
+    .price-breakdown {
+        background: rgba(255,255,255,0.03);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .price-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.82rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.4rem;
+    }
+
+    .price-row.total {
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--text);
+        padding-top: 0.6rem;
+        border-top: 1px solid var(--border);
+        margin-top: 0.4rem;
+        margin-bottom: 0;
+    }
+
+    .price-row.total span:last-child { color: var(--pink); }
+
+    .btn-book-now {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-family: 'Lato', sans-serif;
+        box-shadow: 0 6px 20px var(--pink-glow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-book-now:hover { transform: translateY(-2px); box-shadow: 0 12px 35px var(--pink-glow); }
+    .btn-book-now:active { transform: scale(0.98); }
+
+    /* Secure info */
+    .secure-info {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border);
+        flex-wrap: wrap;
+    }
+
+    .secure-item {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    /* Best time */
+    .best-time-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.5rem;
+    }
+
+    .month-card {
+        padding: 0.6rem;
+        border-radius: 10px;
+        text-align: center;
+        background: var(--bg-secondary);
+        border: 1px solid var(--border);
+        transition: all 0.3s;
+    }
+
+    .month-card.best {
+        background: rgba(64,145,108,0.15);
+        border-color: rgba(64,145,108,0.3);
+    }
+
+    .month-card.good {
+        background: rgba(255,193,7,0.1);
+        border-color: rgba(255,193,7,0.2);
+    }
+
+    .month-name { font-size: 0.72rem; color: var(--text-muted); }
+    .month-icon { font-size: 1rem; }
+    .month-label { font-size: 0.6rem; margin-top: 0.2rem; color: var(--text-muted); }
+    .month-card.best .month-label { color: #40916c; font-weight: 700; }
+
+    @media (max-width: 1024px) {
+        .detail-content { grid-template-columns: 1fr; }
+        .booking-sticky { position: static; }
+        .quick-info { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 600px) {
+        .spot-hero { height: 50vh; min-height: 300px; }
+        .hero-bottom { padding: 1.5rem; }
+        .detail-content { padding: 1rem; }
+        .quick-info { grid-template-columns: repeat(2, 1fr); }
+        .facilities-grid { grid-template-columns: repeat(2, 1fr); }
+        .best-time-grid { grid-template-columns: repeat(4, 1fr); }
+        .gallery-mini { grid-template-columns: repeat(4, 1fr); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="detail-page">
+
+    <!-- ===== HERO ===== -->
+    <div class="spot-hero">
+        {% if spot.image %}
+            <img src="{{ url_for('static', filename='uploads/tourism/' + spot.image) }}" alt="{{ spot.name }}">
+        {% else %}
+            {% if spot.category == 'pantai' %}🏖️
+            {% elif spot.category == 'alam' %}🏔️
+            {% elif spot.category == 'budaya' %}🏛️
+            {% elif spot.category == 'bahari' %}🤿
+            {% elif spot.category == 'danau' %}🏞️
+            {% else %}🗺️{% endif %}
+        {% endif %}
+        <div class="hero-overlay"></div>
+
+        <!-- Top bar -->
+        <div class="hero-top-bar">
+            <a href="{{ url_for('tourism.index') }}" class="hero-back-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+                Kembali
+            </a>
+            <div class="hero-share-btns">
+                <button class="hero-action-btn" id="likeBtn" onclick="toggleLike()" title="Simpan">♡</button>
+                <button class="hero-action-btn" onclick="shareSpot()" title="Bagikan">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Bottom info -->
+        <div class="hero-bottom">
+            <span class="spot-category-pill">
+                {% if spot.category == 'pantai' %}🏖️{% elif spot.category == 'alam' %}🏔️{% elif spot.category == 'budaya' %}🏛️{% elif spot.category == 'bahari' %}🤿{% elif spot.category == 'danau' %}🏞️{% else %}🗺️{% endif %}
+                {{ spot.category }}
+            </span>
+            <h1 class="spot-hero-title">{{ spot.name }}</h1>
+            <div class="spot-hero-meta">
+                <div class="hero-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {{ spot.city }}, {{ spot.province }}
+                </div>
+                <div class="hero-meta-item">
+                    <span style="color:#ffd700;">★</span> {{ spot.rating }}
+                    <span style="color:rgba(255,255,255,0.5);">({{ spot.total_reviews }} ulasan)</span>
+                </div>
+                <div class="hero-meta-item">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {{ spot.opening_hours or 'Lihat info' }}
+                </div>
+                {% if spot.is_featured %}
+                <div class="hero-meta-item">
+                    <span style="background:rgba(255,193,7,0.2);border:1px solid rgba(255,193,7,0.4);border-radius:20px;padding:0.2rem 0.6rem;font-size:0.72rem;color:#ffd700;">⭐ Unggulan</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== CONTENT ===== -->
+    <div class="detail-content">
+
+        <!-- ===== LEFT ===== -->
+        <div class="detail-left">
+
+            <!-- Quick Info -->
+            <div class="quick-info">
+                <div class="quick-info-card">
+                    <div class="qi-icon">💰</div>
+                    <div class="qi-value">Rp {{ "{:,.0f}".format(spot.price_min) }}+</div>
+                    <div class="qi-label">Mulai dari</div>
+                </div>
+                <div class="quick-info-card">
+                    <div class="qi-icon">⭐</div>
+                    <div class="qi-value">{{ spot.rating }}/5.0</div>
+                    <div class="qi-label">Rating</div>
+                </div>
+                <div class="quick-info-card">
+                    <div class="qi-icon">👥</div>
+                    <div class="qi-value">{{ spot.total_reviews }}</div>
+                    <div class="qi-label">Ulasan</div>
+                </div>
+                <div class="quick-info-card">
+                    <div class="qi-icon">🕐</div>
+                    <div class="qi-value">{{ spot.opening_hours or '07:00-17:00' }}</div>
+                    <div class="qi-label">Jam Buka</div>
+                </div>
+            </div>
+
+            <!-- Deskripsi -->
+            <div class="info-section">
+                <h3 class="info-section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Tentang Destinasi
+                </h3>
+                <p class="description-text">{{ spot.description or 'Informasi destinasi ini sedang diperbarui.' }}</p>
+            </div>
+
+            <!-- Rating Breakdown -->
+            <div class="info-section">
+                <h3 class="info-section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Rating & Ulasan
+                </h3>
+                <div class="rating-overview">
+                    <div class="rating-big">
+                        <div class="rating-number">{{ spot.rating }}</div>
+                        <div class="rating-stars-big">
+                            {% for i in range(5) %}
+                            {% if i < spot.rating|int %}★{% else %}☆{% endif %}
+                            {% endfor %}
+                        </div>
+                        <div class="rating-count">{{ spot.total_reviews }} ulasan</div>
+                    </div>
+                    <div class="rating-bars">
+                        {% for star, pct in [(5, 70), (4, 20), (3, 7), (2, 2), (1, 1)] %}
+                        <div class="rating-bar-row">
+                            <span style="min-width:1rem;">{{ star }}</span>
+                            <span style="color:#ffd700;font-size:0.75rem;">★</span>
+                            <div class="rating-bar-track">
+                                <div class="rating-bar-fill" style="width:{{ pct }}%;"></div>
+                            </div>
+                            <span style="min-width:2rem;text-align:right;">{{ pct }}%</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Review cards -->
+                <div style="display:flex;flex-direction:column;gap:0.8rem;margin-top:1rem;">
+                    {% set reviews_data = [
+                        ('Dewi S.', 5, 'Tempat yang sangat romantis! Kami ke sini untuk anniversary dan sangat puas. Pemandangannya luar biasa indah.', '2 hari lalu'),
+                        ('Budi R.', 5, 'Wajib dikunjungi untuk pasangan! Fasilitas lengkap dan harga terjangkau. Akan kembali lagi.', '1 minggu lalu'),
+                        ('Sari A.', 4, 'Indah sekali, apalagi saat sunset. Sedikit ramai tapi tetap worth it untuk valentine.', '2 minggu lalu'),
+                    ] %}
+                    {% for name, stars, text, time in reviews_data %}
+                    <div style="padding:1rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:14px;">
+                        <div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:0.6rem;">
+                            <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,45,120,0.2);display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--pink);flex-shrink:0;">{{ name[0] }}</div>
+                            <div>
+                                <p style="font-size:0.85rem;font-weight:700;color:var(--text);">{{ name }}</p>
+                                <div style="display:flex;align-items:center;gap:0.3rem;">
+                                    <span style="color:#ffd700;font-size:0.75rem;">{% for i in range(stars) %}★{% endfor %}</span>
+                                    <span style="font-size:0.7rem;color:var(--text-muted);">• {{ time }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <p style="font-size:0.83rem;color:var(--text-secondary);line-height:1.5;">{{ text }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Fasilitas -->
+            {% if spot.facilities %}
+            <div class="info-section">
+                <h3 class="info-section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                    Fasilitas Tersedia
+                </h3>
+                <div class="facilities-grid">
+                    {% set facility_icons = {
+                        'Parkir': '🅿️', 'Toilet': '🚻', 'Restoran': '🍽️',
+                        'Cafe': '☕', 'Wifi': '📶', 'Penginapan': '🏨',
+                        'Pemandu': '👨‍💼', 'Snorkeling': '🤿', 'Diving': '🤿',
+                        'Spot Foto': '📸', 'Trekking': '🥾', 'Jeep': '🚙',
+                        'Guide': '🗺️', 'Museum': '🏛️', 'Souvenir': '🎁',
+                        'Boat': '⛵', 'Ferry': '🚢', 'Porter': '🧳',
+                        'ATM': '💳', 'Masjid': '🕌', 'Penyewaan ATV': '🏍️',
+                        'Penyewaan Kuda': '🐎'
+                    } %}
+                    {% for fac in spot.facilities.split(',') %}
+                    <div class="facility-chip">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        {{ facility_icons.get(fac.strip(), '✓') }} {{ fac.strip() }}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Tips Perjalanan -->
+            <div class="info-section">
+                <h3 class="info-section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    Tips Perjalanan
+                </h3>
+                <div class="tips-list">
+                    <div class="tip-item">
+                        <span class="tip-icon">⏰</span>
+                        <p class="tip-text"><strong>Waktu Terbaik:</strong> Datang pagi hari (sebelum jam 9) atau sore menjelang sunset untuk pengalaman terbaik dan foto yang indah.</p>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">👫</span>
+                        <p class="tip-text"><strong>Untuk Pasangan:</strong> Pilih paket couple untuk harga lebih hemat. Jangan lupa bawa kamera untuk mengabadikan momen romantis!</p>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">🎒</span>
+                        <p class="tip-text"><strong>Yang Perlu Dibawa:</strong> Sunscreen, air minum, kamera, pakaian nyaman, dan uang tunai untuk kebutuhan di lokasi.</p>
+                    </div>
+                    <div class="tip-item">
+                        <span class="tip-icon">🚗</span>
+                        <p class="tip-text"><strong>Transportasi:</strong> Disarankan menggunakan kendaraan pribadi. Tersedia parkir luas di lokasi.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Waktu Terbaik Berkunjung -->
+            <div class="info-section">
+                <h3 class="info-section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    Waktu Terbaik Berkunjung
+                </h3>
+                <div class="best-time-grid">
+                    {% set months_data = [
+                        ('Jan','☀️','best'), ('Feb','💕','best'),
+                        ('Mar','🌤️','good'), ('Apr','🌦️','good'),
+                        ('Mei','⛅','good'), ('Jun','☀️','best'),
+                        ('Jul','☀️','best'), ('Agu','☀️','best'),
+                        ('Sep','🌤️','good'), ('Okt','🌦️','ok'),
+                        ('Nov','🌧️','ok'), ('Des','🌧️','ok')
+                    ] %}
+                    {% for month, icon, quality in months_data %}
+                    <div class="month-card {{ quality if quality != 'ok' else '' }}">
+                        <div class="month-icon">{{ icon }}</div>
+                        <div class="month-name">{{ month }}</div>
+                        <div class="month-label">
+                            {% if quality == 'best' %}Terbaik
+                            {% elif quality == 'good' %}Bagus
+                            {% else %}Cukup{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div style="display:flex;gap:1rem;margin-top:0.8rem;font-size:0.75rem;color:var(--text-muted);">
+                    <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(64,145,108,0.5);display:inline-block;"></span>Terbaik</span>
+                    <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:10px;height:10px;border-radius:2px;background:rgba(255,193,7,0.3);display:inline-block;"></span>Bagus</span>
+                    <span style="display:flex;align-items:center;gap:0.3rem;"><span style="width:10px;height:10px;border-radius:2px;background:var(--bg-secondary);border:1px solid var(--border);display:inline-block;"></span>Cukup</span>
+                </div>
+            </div>
+
+            <!-- Lokasi & Peta -->
+            {% if spot.latitude and spot.longitude %}
+            <div class="info-section">
+                <h3 class="info-section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    Lokasi & Rute
+                </h3>
+
+                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem;display:flex;align-items:center;gap:0.4rem;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                    {{ spot.location }}, {{ spot.city }}, {{ spot.province }}
+                </p>
+
+                <div class="route-buttons">
+                    <button onclick="getRoute('car')" class="route-btn active" id="btn-car">🚗 Mobil</button>
+                    <button onclick="getRoute('bike')" class="route-btn" id="btn-bike">🛵 Motor</button>
+                    <button onclick="getRoute('foot')" class="route-btn" id="btn-foot">🚶 Jalan Kaki</button>
+                </div>
+
+                <div class="route-info-box" id="routeInfoBox">
+                    <div style="font-size:1.2rem;">🗺️</div>
+                    <div>
+                        <span id="routeDuration" style="font-weight:700;color:var(--pink);"></span>
+                        <span style="color:var(--text-muted);"> • </span>
+                        <span id="routeDistance" style="color:var(--text-secondary);font-size:0.85rem;"></span>
+                    </div>
+                </div>
+
+                <div class="map-container">
+                    <div id="spotMap"></div>
+                </div>
+
+                <a href="https://www.openstreetmap.org/directions?to={{ spot.latitude }},{{ spot.longitude }}"
+                   target="_blank"
+                   style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:0.8rem;padding:0.7rem;background:rgba(100,200,100,0.08);border:1px solid rgba(100,200,100,0.2);border-radius:12px;color:#4caf50;font-size:0.82rem;font-weight:700;text-decoration:none;transition:all 0.3s;"
+                   onmouseover="this.style.background='rgba(100,200,100,0.15)'"
+                   onmouseout="this.style.background='rgba(100,200,100,0.08)'">
+                    🗺️ Buka Rute di OpenStreetMap
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Destinasi Terkait -->
+            {% if related %}
+            <div class="info-section">
+                <h3 class="info-section-title">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 110-14h.5"/></svg>
+                    Destinasi Serupa
+                </h3>
+                <div class="related-scroll">
+                    {% for r in related %}
+                    <a href="{{ url_for('tourism.detail', spot_id=r.id) }}" class="related-card-sm">
+                        <div class="related-img-sm">
+                            {% if r.image %}
+                                <img src="{{ url_for('static', filename='uploads/tourism/' + r.image) }}" alt="">
+                            {% else %}🗺️{% endif %}
+                        </div>
+                        <div class="related-body-sm">
+                            <p class="related-name-sm">{{ r.name }}</p>
+                            <p style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.2rem;">{{ r.city }}</p>
+                            <p class="related-price-sm">Rp {{ "{:,.0f}".format(r.price_min) }}+</p>
+                        </div>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+
+        <!-- ===== RIGHT — BOOKING ===== -->
+        <div class="booking-sticky">
+            <div class="booking-card-new">
+                <div class="booking-card-header">
+                    <div class="booking-price-main">
+                        Rp {{ "{:,.0f}".format(spot.price_min) }}
+                        <span>/ orang</span>
+                    </div>
+                    <div class="booking-rating-mini">
+                        <span style="color:#ffd700;">★★★★★</span>
+                        <span>{{ spot.rating }}</span>
+                        <span>•</span>
+                        <span>{{ spot.total_reviews }} ulasan</span>
+                        <span>•</span>
+                        <span style="color:#40916c;font-weight:700;">✓ Tersedia</span>
+                    </div>
+                </div>
+
+                <div class="booking-form-body">
+                    <form method="POST" action="{{ url_for('tourism.book', spot_id=spot.id) }}" id="bookingForm">
+                        <input type="hidden" name="payment_method" id="selectedPayment" value="gopay">
+
+                        <!-- Tipe Tiket -->
+                        <div class="book-form-group">
+                            <label class="book-label">Tipe Tiket</label>
+                            <div class="ticket-selector">
+                                <div class="ticket-opt">
+                                    <input type="radio" name="ticket_type" id="t_single" value="single">
+                                    <label class="ticket-opt-label" for="t_single">
+                                        <div class="ticket-opt-info">
+                                            <p class="ticket-opt-name">👤 Single</p>
+                                            <p class="ticket-opt-desc">1 orang</p>
+                                        </div>
+                                        <span class="ticket-opt-price">Rp {{ "{:,.0f}".format(spot.price_min) }}</span>
+                                    </label>
+                                </div>
+                                <div class="ticket-opt">
+                                    <input type="radio" name="ticket_type" id="t_couple" value="couple" checked>
+                                    <label class="ticket-opt-label" for="t_couple">
+                                        <div class="ticket-opt-info">
+                                            <p class="ticket-opt-name">💑 Couple <span style="font-size:0.65rem;background:rgba(255,45,120,0.2);color:var(--pink);padding:0.1rem 0.4rem;border-radius:4px;">Valentine!</span></p>
+                                            <p class="ticket-opt-desc">2 orang • Hemat lebih banyak</p>
+                                        </div>
+                                        <span class="ticket-opt-price">Rp {{ "{:,.0f}".format(spot.price_min * 2) }}</span>
+                                    </label>
+                                </div>
+                                <div class="ticket-opt">
+                                    <input type="radio" name="ticket_type" id="t_family" value="family">
+                                    <label class="ticket-opt-label" for="t_family">
+                                        <div class="ticket-opt-info">
+                                            <p class="ticket-opt-name">👨‍👩‍👧‍👦 Keluarga</p>
+                                            <p class="ticket-opt-desc">4 orang</p>
+                                        </div>
+                                        <span class="ticket-opt-price">Rp {{ "{:,.0f}".format(spot.price_min * 4) }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tanggal -->
+                        <div class="book-form-group">
+                            <label class="book-label">Tanggal Kunjungan</label>
+                            <input type="date" name="visit_date" class="book-input"
+                                   min="{{ today.strftime('%Y-%m-%d') }}"
+                                   value="{{ today.strftime('%Y-%m-%d') }}" required
+                                   onchange="updateTotal()">
+                        </div>
+
+                        <!-- Jumlah -->
+                        <div class="book-form-group">
+                            <label class="book-label">Jumlah Tiket</label>
+                            <div style="display:flex;align-items:center;gap:0.8rem;">
+                                <button type="button" onclick="changeQty(-1)"
+                                        style="width:36px;height:36px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--pink);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Lato',sans-serif;flex-shrink:0;">−</button>
+                                <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="20"
+                                       class="book-input" style="text-align:center;width:80px;flex-shrink:0;"
+                                       onchange="updateTotal()">
+                                <button type="button" onclick="changeQty(1)"
+                                        style="width:36px;height:36px;border-radius:10px;background:var(--bg-secondary);border:1px solid var(--border);color:var(--pink);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:'Lato',sans-serif;flex-shrink:0;">+</button>
+                            </div>
+                        </div>
+
+                        <!-- Metode Pembayaran -->
+                        <div class="book-form-group">
+                            <label class="book-label">Metode Pembayaran</label>
+                            <div class="pay-mini-grid">
+                                {% for val, icon, name in [
+                                    ('gopay','💚','GoPay'), ('ovo','💜','OVO'),
+                                    ('dana','💙','DANA'), ('shopeepay','🧡','ShopeePay'),
+                                    ('qris','📱','QRIS'), ('linkaja','❤️','LinkAja'),
+                                    ('bca','🏦','BCA'), ('mandiri','🏦','Mandiri'),
+                                    ('visa','💳','Visa/MC')
+                                ] %}
+                                <div class="pay-mini-opt">
+                                    <input type="radio" name="_pay" id="p_{{ val }}" value="{{ val }}"
+                                           {% if val == 'gopay' %}checked{% endif %}
+                                           onchange="document.getElementById('selectedPayment').value='{{ val }}'">
+                                    <label class="pay-mini-label" for="p_{{ val }}">
+                                        <span class="pay-mini-icon">{{ icon }}</span>{{ name }}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Catatan -->
+                        <div class="book-form-group">
+                            <label class="book-label">Catatan (opsional)</label>
+                            <input type="text" name="notes" class="book-input" placeholder="Permintaan khusus...">
+                        </div>
+
+                        <!-- Price Breakdown -->
+                        <div class="price-breakdown">
+                            <div class="price-row">
+                                <span id="priceDesc">Tiket Couple × 1</span>
+                                <span id="priceBase">Rp {{ "{:,.0f}".format(spot.price_min * 2) }}</span>
+                            </div>
+                            <div class="price-row">
+                                <span>Biaya Layanan</span>
+                                <span style="color:#40916c;">Gratis 🎉</span>
+                            </div>
+                            <div class="price-row total">
+                                <span>Total Bayar</span>
+                                <span id="priceTotal">Rp {{ "{:,.0f}".format(spot.price_min * 2) }}</span>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-book-now">
+                            🎫 Pesan Sekarang
+                        </button>
+
+                    </form>
+
+                    <div class="secure-info">
+                        <div class="secure-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                            Transaksi Aman
+                        </div>
+                        <div class="secure-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                            Tiket Instan
+                        </div>
+                        <div class="secure-item">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                            Bisa Dibatalkan
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Harga
+    const priceMin = {{ spot.price_min }};
+    const prices = { single: priceMin, couple: priceMin * 2, family: priceMin * 4 };
+    const typeNames = { single: 'Single', couple: 'Couple', family: 'Keluarga' };
+
+    function updateTotal() {
+        const type = document.querySelector('input[name="ticket_type"]:checked')?.value || 'couple';
+        const qty = parseInt(document.getElementById('qtyInput')?.value || 1);
+        const basePrice = (prices[type] || priceMin) * qty;
+
+        document.getElementById('priceDesc').textContent = `Tiket ${typeNames[type]} × ${qty}`;
+        document.getElementById('priceBase').textContent = 'Rp ' + basePrice.toLocaleString('id-ID');
+        document.getElementById('priceTotal').textContent = 'Rp ' + basePrice.toLocaleString('id-ID');
+    }
+
+    document.querySelectorAll('input[name="ticket_type"]').forEach(r => r.addEventListener('change', updateTotal));
+    document.getElementById('qtyInput')?.addEventListener('change', updateTotal);
+    updateTotal();
+
+    function changeQty(dir) {
+        const inp = document.getElementById('qtyInput');
+        const val = parseInt(inp.value) + dir;
+        if (val >= 1 && val <= 20) { inp.value = val; updateTotal(); }
+    }
+
+    // Like
+    let liked = false;
+    function toggleLike() {
+        liked = !liked;
+        const btn = document.getElementById('likeBtn');
+        btn.textContent = liked ? '❤️' : '♡';
+        btn.classList.toggle('liked', liked);
+    }
+
+    // Share
+    function shareSpot() {
+        if (navigator.share) {
+            navigator.share({
+                title: '{{ spot.name }}',
+                text: 'Destinasi wisata romantis untuk valentine! 🌹',
+                url: window.location.href
+            });
+        } else {
+            navigator.clipboard.writeText(window.location.href);
+            alert('Link berhasil disalin!');
+        }
+    }
+
+    // Peta
+    {% if spot.latitude and spot.longitude %}
+    const spotLat = {{ spot.latitude }};
+    const spotLng = {{ spot.longitude }};
+
+    const map = L.map('spotMap').setView([spotLat, spotLng], 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(map);
+
+    const destIcon = L.divIcon({
+        html: `<div style="background:#ff2d78;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.2rem;border:3px solid white;box-shadow:0 4px 20px rgba(255,45,120,0.6);">📍</div>`,
+        iconSize: [40, 40], iconAnchor: [20, 20], className: ''
+    });
+
+    L.marker([spotLat, spotLng], { icon: destIcon })
+        .addTo(map)
+        .bindPopup(`<b style="color:#ff2d78;font-size:0.9rem;">{{ spot.name }}</b><br><small style="color:#666;">{{ spot.city }}, {{ spot.province }}</small>`)
+        .openPopup();
+
+    let routeLayer = null, userMarker = null;
+
+    function getRoute(mode) {
+        document.querySelectorAll('.route-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`btn-${mode}`)?.classList.add('active');
+
+        if (!navigator.geolocation) { alert('Browser tidak mendukung geolokasi'); return; }
+
+        navigator.geolocation.getCurrentPosition(pos => {
+            const userLat = pos.coords.latitude;
+            const userLng = pos.coords.longitude;
+
+            if (routeLayer) { map.removeLayer(routeLayer); routeLayer = null; }
+            if (userMarker) { map.removeLayer(userMarker); userMarker = null; }
+
+            const userIcon = L.divIcon({
+                html: `<div style="background:#4361ee;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;border:3px solid white;box-shadow:0 4px 15px rgba(67,97,238,0.6);">📱</div>`,
+                iconSize: [34, 34], iconAnchor: [17, 17], className: ''
+            });
+
+            userMarker = L.marker([userLat, userLng], { icon: userIcon })
+                .addTo(map).bindPopup('<b>📱 Lokasi Kamu</b>');
+
+            const osrmMode = mode === 'car' ? 'driving' : mode === 'bike' ? 'driving' : 'foot';
+            const url = `https://router.project-osrm.org/route/v1/${osrmMode}/${userLng},${userLat};${spotLng},${spotLat}?overview=full&geometries=geojson`;
+
+            fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                if (data.code === 'Ok') {
+                    const route = data.routes[0];
+                    const coords = route.geometry.coordinates.map(c => [c[1], c[0]]);
+                    routeLayer = L.polyline(coords, {
+                        color: '#ff2d78', weight: 5, opacity: 0.85,
+                        dashArray: mode === 'foot' ? '8,8' : null
+                    }).addTo(map);
+                    map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+
+                    const dur = Math.round(route.duration / 60);
+                    const dist = (route.distance / 1000).toFixed(1);
+                    document.getElementById('routeInfoBox').classList.add('show');
+                    document.getElementById('routeDuration').textContent = `⏱ ${dur < 60 ? dur + ' menit' : Math.floor(dur/60) + ' jam ' + (dur%60) + ' menit'}`;
+                    document.getElementById('routeDistance').textContent = `📏 ${dist} km`;
+                }
+            })
+            .catch(() => {
+                routeLayer = L.polyline([[userLat, userLng], [spotLat, spotLng]], {
+                    color: '#ff2d78', weight: 3, opacity: 0.5, dashArray: '8,8'
+                }).addTo(map);
+                map.fitBounds(routeLayer.getBounds(), { padding: [50, 50] });
+                const dist = (map.distance([userLat, userLng], [spotLat, spotLng]) / 1000).toFixed(1);
+                document.getElementById('routeInfoBox').classList.add('show');
+                document.getElementById('routeDuration').textContent = '⏱ Estimasi tidak tersedia';
+                document.getElementById('routeDistance').textContent = `📏 ±${dist} km`;
+            });
+
+        }, () => alert('Izinkan akses lokasi!'));
+    }
+    {% endif %}
+</script>
+{% endblock %}

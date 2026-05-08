@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+{% block title %}Tiket Saya — RafValyn 🎫{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tickets-wrapper { max-width: 800px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .page-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+    .page-header h1 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: var(--text); }
+
+    .ticket-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+        margin-bottom: 1.2rem;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .ticket-card:hover { border-color: rgba(255,45,120,0.3); box-shadow: 0 8px 25px var(--pink-glow); }
+
+    /* Ticket punch holes */
+    .ticket-punch {
+        display: flex;
+        align-items: center;
+        position: relative;
+    }
+
+    .ticket-punch::before, .ticket-punch::after {
+        content: '';
+        position: absolute;
+        width: 24px; height: 24px;
+        border-radius: 50%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 2;
+    }
+
+    .ticket-punch::before { left: -12px; }
+    .ticket-punch::after { right: -12px; }
+
+    .ticket-left {
+        flex: 1;
+        padding: 1.5rem;
+    }
+
+    .ticket-divider {
+        width: 1px;
+        height: 100%;
+        min-height: 120px;
+        background: repeating-linear-gradient(
+            to bottom,
+            var(--border) 0,
+            var(--border) 6px,
+            transparent 6px,
+            transparent 12px
+        );
+        flex-shrink: 0;
+        margin: 0 0.5rem;
+    }
+
+    .ticket-right {
+        width: 140px;
+        padding: 1.5rem 1rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        flex-shrink: 0;
+    }
+
+    .booking-code-display {
+        font-family: monospace;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--pink);
+        letter-spacing: 2px;
+        margin-bottom: 0.5rem;
+    }
+
+    .qr-placeholder {
+        width: 80px; height: 80px;
+        border: 2px solid var(--border);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        background: var(--bg-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .ticket-spot-name {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        margin-bottom: 0.3rem;
+    }
+
+    .ticket-location {
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .ticket-details {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        margin-bottom: 0.8rem;
+    }
+
+    .ticket-detail {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+    }
+
+    .detail-label { font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .detail-value { font-size: 0.88rem; font-weight: 700; color: var(--text); }
+
+    .ticket-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.25rem 0.7rem;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 700;
+    }
+
+    .status-active { background: rgba(64,145,108,0.15); color: #40916c; }
+    .status-used { background: rgba(108,117,125,0.15); color: #adb5bd; }
+    .status-cancelled { background: rgba(255,51,102,0.15); color: #ff8fab; }
+    .status-expired { background: rgba(255,193,7,0.15); color: #ffd700; }
+
+    .ticket-footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.8rem 1.5rem;
+        border-top: 1px solid var(--border);
+        background: rgba(255,255,255,0.02);
+    }
+
+    .ticket-price { font-weight: 700; color: var(--pink); font-size: 0.95rem; }
+
+    .btn-cancel-ticket {
+        padding: 0.4rem 0.9rem;
+        background: transparent;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        color: var(--text-secondary);
+        font-size: 0.78rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-family: 'Lato', sans-serif;
+    }
+
+    .btn-cancel-ticket:hover { border-color: #ff3366; color: #ff3366; }
+
+    .empty-tickets {
+        text-align: center;
+        padding: 4rem 2rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+    }
+
+    @media (max-width: 600px) {
+        .ticket-punch { flex-direction: column; }
+        .ticket-punch::before, .ticket-punch::after { display: none; }
+        .ticket-divider { width: 100%; height: 1px; min-height: auto; background: repeating-linear-gradient(to right, var(--border) 0, var(--border) 6px, transparent 6px, transparent 12px); }
+        .ticket-right { width: 100%; flex-direction: row; gap: 1rem; }
+        .tickets-wrapper { padding: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="tickets-wrapper">
+
+    <div class="page-header">
+        <a href="{{ url_for('tourism.index') }}" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);text-decoration:none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <h1>🎫 Tiket Wisata Saya</h1>
+    </div>
+
+    {% if tickets %}
+        {% for ticket in tickets %}
+        <div class="ticket-card" id="ticket-{{ ticket.id }}">
+            <div class="ticket-punch">
+                <div class="ticket-left">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem;">
+                        <span class="ticket-status status-{{ ticket.status }}">
+                            {% if ticket.status == 'active' %}✓ Aktif
+                            {% elif ticket.status == 'used' %}✓ Sudah Digunakan
+                            {% elif ticket.status == 'cancelled' %}✗ Dibatalkan
+                            {% else %}⚠ Kadaluarsa{% endif %}
+                        </span>
+                        <span style="font-size:0.72rem;color:var(--text-muted);">{{ ticket.created_at.strftime('%d %b %Y') }}</span>
+                    </div>
+
+                    <p class="ticket-spot-name">{{ ticket.spot.name }}</p>
+                    <p class="ticket-location">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        {{ ticket.spot.city }}, {{ ticket.spot.province }}
+                    </p>
+
+                    <div class="ticket-details">
+                        <div class="ticket-detail">
+                            <span class="detail-label">Tanggal</span>
+                            <span class="detail-value">{{ ticket.visit_date.strftime('%d %B %Y') }}</span>
+                        </div>
+                        <div class="ticket-detail">
+                            <span class="detail-label">Tipe</span>
+                            <span class="detail-value">{{ ticket.ticket_type.title() }}</span>
+                        </div>
+                        <div class="ticket-detail">
+                            <span class="detail-label">Jumlah</span>
+                            <span class="detail-value">{{ ticket.quantity }} tiket</span>
+                        </div>
+                        <div class="ticket-detail">
+                            <span class="detail-label">Pembayaran</span>
+                            <span class="detail-value">{{ ticket.payment_method.upper() }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="ticket-divider"></div>
+
+                <div class="ticket-right">
+                    <div class="qr-placeholder">🎫</div>
+                    <div class="booking-code-display">{{ ticket.booking_code }}</div>
+                    <span style="font-size:0.65rem;color:var(--text-muted);">Kode Booking</span>
+                </div>
+            </div>
+
+            <div class="ticket-footer">
+                <span class="ticket-price">Rp {{ "{:,.0f}".format(ticket.total_price) }}</span>
+                <div style="display:flex;gap:0.5rem;align-items:center;">
+                    {% if ticket.status == 'active' and ticket.visit_date >= today %}
+                    <button class="btn-cancel-ticket" onclick="cancelTicket({{ ticket.id }})">Batalkan</button>
+                    {% endif %}
+                    <a href="{{ url_for('tourism.detail', spot_id=ticket.spot_id) }}" style="padding:0.4rem 0.9rem;background:rgba(255,45,120,0.1);border:1px solid rgba(255,45,120,0.3);border-radius:8px;color:var(--pink);font-size:0.78rem;text-decoration:none;font-weight:700;">Lihat Destinasi</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-tickets">
+            <p style="font-size:4rem;margin-bottom:1rem;">🎫</p>
+            <h3 style="font-family:'Playfair Display',serif;font-size:1.3rem;color:var(--text);margin-bottom:0.5rem;">Belum ada tiket</h3>
+            <p style="color:var(--text-muted);font-size:0.88rem;margin-bottom:1.5rem;">Pesan tiket destinasi wisata romantis untuk valentine kamu!</p>
+            <a href="{{ url_for('tourism.index') }}" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.8rem 2rem;background:linear-gradient(135deg,var(--pink-light),var(--pink));color:white;border-radius:12px;font-weight:700;text-decoration:none;box-shadow:0 6px 20px var(--pink-glow);">
+                🗺️ Jelajahi Destinasi
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function cancelTicket(id) {
+        if (!confirm('Batalkan tiket ini?')) return;
+        fetch(`/wisata/tiket/${id}/cancel`, { method: 'POST' })
+        .then(r => r.json())
+        .then(d => {
+            if (d.success) {
+                location.reload();
+            }
+        });
+    }
+</script>
+{% endblock %}

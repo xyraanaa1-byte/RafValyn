@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}RafValyn 🌹{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+    <!-- PWA -->
+<link rel="manifest" href="/static/manifest.json">
+<meta name="theme-color" content="#ff2d78">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="RafValyn">
+<link rel="apple-touch-icon" href="/static/uploads/logo.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="RafValyn">
+</head>
+
+<!-- Register Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/static/sw.js')
+            .then(reg => console.log('SW registered'))
+            .catch(err => console.log('SW error:', err));
+    });
+}
+
+// Install prompt
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner();
+});
+
+function showInstallBanner() {
+    const banner = document.getElementById('installBanner');
+    if (banner) banner.style.display = 'flex';
+}
+
+function installApp() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(result => {
+            if (result.outcome === 'accepted') {
+                document.getElementById('installBanner').style.display = 'none';
+            }
+            deferredPrompt = null;
+        });
+    }
+}
+
+function dismissInstall() {
+    document.getElementById('installBanner').style.display = 'none';
+    localStorage.setItem('installDismissed', '1');
+}
+</script>
+
+<!-- Install Banner -->
+<div id="installBanner" style="display:none;position:fixed;bottom:{% if current_user.is_authenticated %}85px{% else %}1rem{% endif %};left:1rem;right:1rem;background:linear-gradient(135deg,#1a0010,#3d0020);border:1px solid rgba(255,45,120,0.3);border-radius:16px;padding:1rem 1.2rem;z-index:9998;align-items:center;gap:1rem;box-shadow:0 8px 30px rgba(0,0,0,0.3);">
+    <img src="/static/uploads/logo.png" style="width:40px;height:40px;border-radius:10px;object-fit:contain;" onerror="this.style.display='none'">
+    <div style="flex:1;">
+        <p style="font-size:0.88rem;font-weight:700;color:white;margin-bottom:0.1rem;">Install RafValyn</p>
+        <p style="font-size:0.75rem;color:rgba(255,255,255,0.6);">Tambahkan ke layar utama HP kamu!</p>
+    </div>
+    <button onclick="installApp()" style="padding:0.5rem 1rem;background:var(--pink);color:white;border:none;border-radius:10px;font-size:0.82rem;font-weight:700;cursor:pointer;white-space:nowrap;font-family:'Lato',sans-serif;">Install</button>
+    <button onclick="dismissInstall()" style="background:none;border:none;color:rgba(255,255,255,0.5);cursor:pointer;font-size:1.2rem;padding:0.2rem;">×</button>
+</div>
+
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+    <div class="navbar-container">
+
+        <!-- Logo -->
+        <a href="/" class="navbar-logo">
+            Raf<span>Valyn</span>
+        </a>
+
+        <!-- Kanan navbar -->
+        <div class="navbar-right">
+
+            <!-- Search bar -->
+            
+            <!-- Keranjang -->
+            <a href="{{ url_for('shop.cart') }}" class="nav-icon-btn" title="Keranjang">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+                <span class="badge" id="cartBadge">0</span>
+            </a>
+
+            <!-- Notifikasi -->
+               <div style="position:relative;">
+                 <a href="{{ url_for('notif.index') }}" class="nav-icon-btn" title="Notifikasi">
+                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+                   <span class="badge" id="notifBadge">0</span>
+                </a>
+               </div>
+
+            <!-- Profil dropdown -->
+            {% if current_user.is_authenticated %}
+            <div class="profile-dropdown" id="profileDropdown">
+                <button class="profile-btn" onclick="toggleDropdown()">
+                    <img src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_photo) }}"
+                         onerror="this.src='https://ui-avatars.com/api/?name={{ current_user.username }}&background=ff3366&color=fff&size=100'"
+                         alt="Profil" class="profile-avatar">
+                    <span class="profile-name">{{ current_user.username }}</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <div class="dropdown-header">
+                        <img src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_photo) }}"
+                             onerror="this.src='https://ui-avatars.com/api/?name={{ current_user.username }}&background=ff3366&color=fff&size=100'"
+                             alt="Profil" class="dropdown-avatar">
+                        <div>
+                            <p class="dropdown-name">{{ current_user.username }}</p>
+                            <p class="dropdown-email">{{ current_user.email }}</p>
+                        </div>
+                    </div>
+
+                    <div class="dropdown-divider"></div>
+
+                   <!-- Menu navigasi - hanya tampil di laptop -->
+<div class="desktop-only-menu">
+    <a href="{{ url_for('shop.index') }}" class="dropdown-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        Beranda
+    </a>
+    <a href="{{ url_for('shop.products') }}" class="dropdown-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        Toko
+    </a>
+    <a href="{{ url_for('message.send') }}" class="dropdown-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        Pesan Valentine
+    </a>
+    <a href="{{ url_for('chat.index') }}" class="dropdown-item">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        Chat / DM
+    </a>
+    <div class="dropdown-divider"></div>
+</div>
+
+                    <div class="dropdown-divider"></div>
+
+                    <a href="{{ url_for('profile.view') }}" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        Profil Saya
+                    </a>
+                    <a href="{{ url_for('order.history') }}" class="dropdown-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        Pesanan Saya
+                    </a>
+
+                    <a href="{{ url_for('journal.index') }}" class="dropdown-item">
+                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                            Jurnal
+                   </a>
+
+                   <a href="{{ url_for('tourism.index') }}" class="dropdown-item">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                          Wisata Valentine
+                   </a>
+
+                    <div class="dropdown-divider"></div>
+
+                    <!-- Dark/Light Mode Toggle -->
+                    <div class="dropdown-item theme-toggle" onclick="toggleTheme()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="themeIcon"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        <span id="themeLabel">Mode Terang</span>
+                        <div class="toggle-switch" id="toggleSwitch"></div>
+                    </div>
+
+                    {% if current_user.is_admin %}
+                    <div class="dropdown-divider"></div>
+                    <a href="{{ url_for('admin.dashboard') }}" class="dropdown-item admin-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                        Panel Admin
+                    </a>
+
+                    <a href="{{ url_for('tourism.admin_index') }}" class="dropdown-item admin-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/></svg>
+                             Admin Wisata
+                    </a>
+                    {% endif %}
+
+                    
+                    <div class="dropdown-divider"></div>
+
+                    <a href="javascript:void(0)" onclick="installPWA()" class="dropdown-item" id="installMenuItem" style="display:none;color:var(--pink);font-weight:700;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    📲 Install Aplikasi
+</a>
+
+                    <a href="{{ url_for('auth.logout') }}" class="dropdown-item logout-item">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Keluar
+                    </a>
+                </div>
+            </div>
+            {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn-nav-login">Masuk</a>
+            {% endif %}
+
+        </div>
+    </div>
+</nav>
+
+<!-- Flash Messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+            {{ message }}
+            <button onclick="this.parentElement.remove()">×</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
+
+<!-- Konten Halaman -->
+<main class="main-content">
+    {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <div class="footer-container">
+        <div class="footer-brand">
+            <p class="footer-logo">Raf<span>Valyn</span></p>
+            <p class="footer-tagline">Rayakan Cintamu Bersama Kami 🌹</p>
+        </div>
+        <div class="footer-links">
+            <a href="#">Tentang Kami</a>
+            <a href="#">Kebijakan Privasi</a>
+            <a href="#">Syarat & Ketentuan</a>
+            <a href="#">Hubungi Kami</a>
+        </div>
+        <p class="footer-copy">© 2025 RafValyn. All rights reserved.</p>
+    </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+<!-- BOTTOM NAV — HP ONLY -->
+<nav class="bottom-nav" id="bottomNav">
+    <a href="{{ url_for('shop.index') }}" class="bottom-nav-item {% if request.endpoint == 'shop.index' %}active{% endif %}">
+        <div class="bottom-nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </div>
+        <span>Beranda</span>
+    </a>
+    <a href="{{ url_for('shop.products') }}" class="bottom-nav-item {% if request.endpoint == 'shop.products' %}active{% endif %}">
+        <div class="bottom-nav-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        </div>
+        <span>Toko</span>
+    </a>
+        <a href="{{ url_for('message.send') }}" class="bottom-nav-item {% if request.endpoint == 'message.send' %}active{% endif %}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        </div>
+        <span>Pesan</span>
+    </a>
+    <a href="{{ url_for('chat.index') }}" class="bottom-nav-item {% if request.endpoint == 'chat.index' or request.endpoint == 'chat.room' %}active{% endif %}">
+    <div class="bottom-nav-icon" style="position:relative;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+        </svg>
+        <span class="bottom-badge" id="dmBadge">0</span>
+    </div>
+    <span>Chat</span>
+</a>
+    <a href="{{ url_for('profile.view') }}" class="bottom-nav-item {% if request.endpoint == 'profile.view' %}active{% endif %}">
+        <div class="bottom-nav-icon">
+            {% if current_user.is_authenticated %}
+            <img src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_photo) }}"
+                 onerror="this.src='https://ui-avatars.com/api/?name={{ current_user.username }}&background=ff2d78&color=fff&size=100'"
+                 style="width:26px;height:26px;border-radius:50%;object-fit:cover;border:2px solid currentColor;">
+            {% else %}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            {% endif %}
+        </div>
+        <span>Profil</span>
+    </a>
+</nav>
+
+{% block extra_js %}{% endblock %}
+
+<script>
+// ===== PWA =====
+let deferredPrompt = null;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+
+function showInstallMenu() {
+    const el = document.getElementById('installMenuItem');
+    if (el && !isStandalone) el.style.display = 'flex';
+}
+
+function hideInstallMenu() {
+    const el = document.getElementById('installMenuItem');
+    if (el) el.style.display = 'none';
+}
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallMenu();
+
+    // Banner otomatis setelah 5 detik
+    const dismissed = localStorage.getItem('pwa_dismissed');
+    if (!dismissed && !isStandalone) {
+        setTimeout(() => {
+            const banner = document.getElementById('pwaInstallBanner');
+            if (banner) banner.style.display = 'flex';
+        }, 5000);
+    }
+});
+
+window.addEventListener('appinstalled', () => {
+    hideInstallMenu();
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'none';
+    deferredPrompt = null;
+    showToastMsg('✅ RafValyn berhasil diinstall!');
+});
+
+function installPWA() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(result => {
+            deferredPrompt = null;
+            if (result.outcome === 'accepted') {
+                hideInstallMenu();
+                const banner = document.getElementById('pwaInstallBanner');
+                if (banner) banner.style.display = 'none';
+            }
+        });
+    } else {
+        // iOS / browser tidak support — tampilkan panduan
+        document.getElementById('iosModal').style.display = 'flex';
+    }
+}
+
+function dismissBanner() {
+    const banner = document.getElementById('pwaInstallBanner');
+    if (banner) banner.style.display = 'none';
+    localStorage.setItem('pwa_dismissed', '1');
+}
+
+function showToastMsg(msg) {
+    const t = document.createElement('div');
+    t.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#ff6b9d,#ff2d78);color:white;padding:0.9rem 1.8rem;border-radius:14px;font-size:0.9rem;z-index:99999;box-shadow:0 8px 25px rgba(255,45,120,0.5);font-family:Lato,sans-serif;font-weight:700;pointer-events:none;';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(() => t.remove(), 3500);
+}
+
+// Register SW
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('/static/sw.js')
+        .then(() => console.log('SW OK'))
+        .catch(e => console.warn('SW Error:', e));
+}
+
+// Kalau sudah terinstall, sembunyikan menu install
+if (isStandalone) hideInstallMenu();
+</script>
+
+<!-- Banner Install -->
+<div id="pwaInstallBanner" style="display:none;position:fixed;bottom:80px;left:1rem;right:1rem;max-width:460px;margin:0 auto;z-index:9998;background:linear-gradient(135deg,rgba(20,0,12,0.97),rgba(40,0,22,0.97));border:1px solid rgba(255,45,120,0.3);border-radius:20px;padding:1rem 1.2rem;align-items:center;gap:1rem;box-shadow:0 20px 60px rgba(0,0,0,0.5);backdrop-filter:blur(20px);">
+    <div style="font-size:2.5rem;">🌹</div>
+    <div style="flex:1;">
+        <p style="font-size:0.9rem;font-weight:700;color:white;margin-bottom:0.2rem;">Install RafValyn App</p>
+        <p style="font-size:0.72rem;color:rgba(255,255,255,0.5);">Akses cepat & bisa offline dari layar utama HP!</p>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:0.4rem;">
+        <a href="javascript:void(0)" onclick="installPWA()" style="padding:0.5rem 1.1rem;background:linear-gradient(135deg,#ff6b9d,#ff2d78);color:white;border-radius:10px;font-size:0.8rem;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;display:block;box-shadow:0 4px 12px rgba(255,45,120,0.4);">📲 Install</a>
+        <a href="javascript:void(0)" onclick="dismissBanner()" style="padding:0.3rem 0.6rem;color:rgba(255,255,255,0.4);font-size:0.72rem;cursor:pointer;text-decoration:none;text-align:center;">Nanti</a>
+    </div>
+</div>
+
+<!-- Modal iOS Guide -->
+<div id="iosModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99999;align-items:flex-end;justify-content:center;backdrop-filter:blur(5px);">
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:24px 24px 0 0;padding:2rem;width:100%;max-width:480px;">
+        <div style="text-align:center;margin-bottom:1.5rem;">
+            <div style="font-size:3rem;margin-bottom:0.5rem;">📱</div>
+            <h3 style="font-family:'Playfair Display',serif;color:var(--text);font-size:1.3rem;">Install di iPhone/iPad</h3>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:0.8rem;margin-bottom:1.5rem;">
+            <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem;background:rgba(255,45,120,0.08);border-radius:12px;">
+                <div style="width:30px;height:30px;border-radius:50%;background:var(--pink);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.85rem;">1</div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);">Ketuk tombol <strong>Share ↑</strong> di bawah layar Safari</p>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem;background:rgba(255,45,120,0.08);border-radius:12px;">
+                <div style="width:30px;height:30px;border-radius:50%;background:var(--pink);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.85rem;">2</div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);">Scroll dan pilih <strong>"Add to Home Screen"</strong></p>
+            </div>
+            <div style="display:flex;align-items:center;gap:1rem;padding:0.9rem;background:rgba(255,45,120,0.08);border-radius:12px;">
+                <div style="width:30px;height:30px;border-radius:50%;background:var(--pink);color:white;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;font-size:0.85rem;">3</div>
+                <p style="font-size:0.85rem;color:var(--text-secondary);">Ketuk <strong>"Add"</strong> — selesai! 🎉</p>
+            </div>
+        </div>
+        <a href="javascript:void(0)" onclick="document.getElementById('iosModal').style.display='none'" style="display:block;width:100%;padding:0.9rem;background:linear-gradient(135deg,var(--pink-light),var(--pink));color:white;border-radius:14px;font-weight:700;text-decoration:none;text-align:center;font-family:'Lato',sans-serif;">Mengerti!</a>
+    </div>
+</div>
+
+</body>
+</html>

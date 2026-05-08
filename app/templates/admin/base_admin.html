@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+    .admin-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        min-height: calc(100vh - 65px);
+    }
+
+    /* Sidebar */
+    .admin-sidebar {
+        background: var(--bg-card);
+        border-right: 1px solid var(--border);
+        padding: 1.5rem 0;
+        position: sticky;
+        top: 65px;
+        height: calc(100vh - 65px);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .sidebar-brand {
+        padding: 0 1.2rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 1rem;
+    }
+
+    .sidebar-brand p { font-family: 'Playfair Display', serif; font-size: 1.1rem; color: var(--text); }
+    .sidebar-brand span { font-size: 0.72rem; color: var(--text-muted); }
+
+    .sidebar-section { margin-bottom: 0.3rem; }
+
+    .sidebar-section-title {
+        font-size: 0.65rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        font-weight: 700;
+        padding: 0.8rem 1.2rem 0.3rem;
+    }
+
+    .sidebar-link {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.7rem 1.2rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+        border-left: 3px solid transparent;
+        position: relative;
+    }
+
+    .sidebar-link:hover {
+        background: rgba(255,45,120,0.08);
+        color: var(--pink);
+        border-left-color: rgba(255,45,120,0.3);
+    }
+
+    .sidebar-link.active {
+        background: rgba(255,45,120,0.12);
+        color: var(--pink);
+        border-left-color: var(--pink);
+        font-weight: 700;
+    }
+
+    .sidebar-link svg { flex-shrink: 0; }
+
+    .sidebar-badge {
+        margin-left: auto;
+        background: var(--pink);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 0.1rem 0.5rem;
+        border-radius: 10px;
+        min-width: 20px;
+        text-align: center;
+    }
+
+    .admin-main { overflow: auto; }
+
+    @media (max-width: 768px) {
+        .admin-layout { grid-template-columns: 1fr; }
+        .admin-sidebar { display: none; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+        <div class="sidebar-brand">
+            <p>👑 Admin Panel</p>
+            <span>RafValyn Management</span>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-section-title">Overview</p>
+            <a href="{{ url_for('admin.dashboard') }}" class="sidebar-link {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                Dashboard
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-section-title">Toko</p>
+            <a href="{{ url_for('admin.products') }}" class="sidebar-link {% if request.endpoint in ['admin.products','admin.add_product','admin.edit_product'] %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/></svg>
+                Produk
+            </a>
+            <a href="{{ url_for('admin.orders') }}" class="sidebar-link {% if request.endpoint == 'admin.orders' %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg>
+                Pesanan
+                {% if pending_orders is defined and pending_orders > 0 %}
+                <span class="sidebar-badge">{{ pending_orders }}</span>
+                {% endif %}
+            </a>
+            <a href="{{ url_for('admin.vouchers') }}" class="sidebar-link {% if request.endpoint == 'admin.vouchers' %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                Voucher & Promo
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-section-title">Wisata</p>
+            <a href="{{ url_for('tourism.admin_index') }}" class="sidebar-link {% if request.endpoint == 'tourism.admin_index' %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Destinasi Wisata
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-section-title">Pengguna</p>
+            <a href="{{ url_for('admin.users') }}" class="sidebar-link {% if request.endpoint == 'admin.users' %}active{% endif %}">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                Semua Pengguna
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-section-title">Konten</p>
+            <a href="#" class="sidebar-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+                Pesan Valentine
+            </a>
+            <a href="#" class="sidebar-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+                Jurnal User
+            </a>
+        </div>
+
+        <div class="sidebar-section">
+            <p class="sidebar-section-title">Sistem</p>
+            <a href="{{ url_for('shop.index') }}" class="sidebar-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+                Lihat Website
+            </a>
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link" style="color:#ff3366;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Keluar
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        {% block admin_content %}{% endblock %}
+    </main>
+
+</div>
+{% endblock %}

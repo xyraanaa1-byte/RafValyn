@@ -1,0 +1,660 @@
+{% extends 'base.html' %}
+{% block title %}Checkout — RafValyn 🌹{% endblock %}
+
+{% block extra_css %}
+<style>
+    .checkout-wrapper {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 2rem 1.5rem;
+    }
+
+    .page-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .page-header h1 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.6rem;
+        color: var(--text);
+    }
+
+    .checkout-layout {
+        display: grid;
+        grid-template-columns: 1fr 340px;
+        gap: 1.5rem;
+        align-items: start;
+    }
+
+    .form-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 1.2rem;
+        backdrop-filter: blur(10px);
+    }
+
+    .form-card h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        color: var(--text);
+        margin-bottom: 1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .form-group { margin-bottom: 1rem; }
+
+    label {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 0.4rem;
+        font-weight: 700;
+    }
+
+    input[type="text"], textarea, select {
+        width: 100%;
+        padding: 0.85rem 1rem;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        color: var(--text);
+        font-family: 'Lato', sans-serif;
+        font-size: 0.9rem;
+        outline: none;
+        transition: all 0.3s ease;
+    }
+
+    input:focus, textarea:focus, select:focus {
+        border-color: var(--pink);
+        box-shadow: 0 0 15px var(--pink-glow);
+    }
+
+    input::placeholder, textarea::placeholder { color: var(--text-muted); }
+
+    /* Metode Pembayaran */
+    .payment-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.6rem;
+    }
+
+    .payment-option { position: relative; }
+    .payment-option input { display: none; }
+
+    .payment-label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.3rem;
+        padding: 0.7rem 0.5rem;
+        background: rgba(255,255,255,0.03);
+        border: 1.5px solid var(--border);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.72rem;
+        color: var(--text-secondary);
+        text-align: center;
+        min-height: 70px;
+    }
+
+    .payment-label:hover {
+        border-color: var(--pink);
+        background: rgba(255,45,120,0.05);
+    }
+
+    .payment-option input:checked + .payment-label {
+        border-color: var(--pink);
+        background: rgba(255,45,120,0.12);
+        color: var(--pink);
+        font-weight: 700;
+    }
+
+    .payment-icon { font-size: 1.4rem; }
+
+    /* Voucher */
+    .voucher-input-row {
+        display: flex;
+        gap: 0.6rem;
+    }
+
+    .voucher-input-row input {
+        flex: 1;
+        text-transform: uppercase;
+    }
+
+    .btn-apply-voucher {
+        padding: 0 1.2rem;
+        background: var(--pink);
+        color: white;
+        border: none;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Lato', sans-serif;
+        white-space: nowrap;
+    }
+
+    .btn-apply-voucher:hover { opacity: 0.9; }
+
+    .voucher-result {
+        margin-top: 0.5rem;
+        font-size: 0.82rem;
+        padding: 0.5rem 0.8rem;
+        border-radius: 8px;
+        display: none;
+    }
+
+    .voucher-result.success {
+        background: rgba(64,145,108,0.15);
+        color: #40916c;
+        border: 1px solid rgba(64,145,108,0.3);
+        display: block;
+    }
+
+    .voucher-result.error {
+        background: rgba(255,51,102,0.15);
+        color: #ff8fab;
+        border: 1px solid rgba(255,51,102,0.3);
+        display: block;
+    }
+
+    /* COD Toggle */
+    .cod-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 1.2rem;
+        background: rgba(255,255,255,0.03);
+        border: 1.5px solid var(--border);
+        border-radius: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        margin-top: 1rem;
+    }
+
+    .cod-toggle.active {
+        border-color: #40916c;
+        background: rgba(64,145,108,0.08);
+    }
+
+    .cod-info { display: flex; align-items: center; gap: 0.8rem; }
+    .cod-text p { font-size: 0.88rem; color: var(--text); font-weight: 700; }
+    .cod-text span { font-size: 0.75rem; color: var(--text-muted); }
+
+    .cod-switch {
+        width: 46px; height: 26px;
+        background: var(--border); border-radius: 13px;
+        position: relative; transition: all 0.3s ease; flex-shrink: 0;
+    }
+
+    .cod-switch::after {
+        content: ''; position: absolute;
+        width: 20px; height: 20px;
+        background: white; border-radius: 50%;
+        top: 3px; left: 3px; transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .cod-toggle.active .cod-switch { background: #40916c; }
+    .cod-toggle.active .cod-switch::after { left: 23px; }
+
+    /* Order Summary */
+    .order-summary {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        padding: 1.5rem;
+        position: sticky;
+        top: 80px;
+        backdrop-filter: blur(10px);
+    }
+
+    .order-summary h3 {
+        font-family: 'Playfair Display', serif;
+        font-size: 1.1rem;
+        color: var(--text);
+        margin-bottom: 1.2rem;
+        padding-bottom: 0.8rem;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .summary-item {
+        display: flex;
+        gap: 0.8rem;
+        margin-bottom: 0.8rem;
+        align-items: center;
+    }
+
+    .summary-item-img {
+        width: 52px; height: 52px;
+        border-radius: 10px;
+        background: var(--bg-secondary);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.5rem; flex-shrink: 0; overflow: hidden;
+        border: 1px solid var(--border);
+    }
+
+    .summary-item-img img { width: 100%; height: 100%; object-fit: cover; }
+    .summary-item-info { flex: 1; min-width: 0; }
+    .summary-item-name { font-size: 0.82rem; color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .summary-item-qty { font-size: 0.72rem; color: var(--text-muted); }
+    .summary-item-price { font-size: 0.85rem; color: var(--pink); font-weight: 700; flex-shrink: 0; }
+
+    .summary-divider { height: 1px; background: var(--border); margin: 1rem 0; }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        margin-bottom: 0.5rem;
+    }
+
+    .summary-row.discount { color: #40916c; }
+
+    .summary-total {
+        display: flex;
+        justify-content: space-between;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text);
+        padding-top: 0.8rem;
+        border-top: 2px solid var(--border);
+        margin-top: 0.5rem;
+    }
+
+    .summary-total span:last-child { color: var(--pink); }
+
+    .btn-place-order {
+        width: 100%;
+        padding: 1rem;
+        background: linear-gradient(135deg, var(--pink-light), var(--pink));
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-family: 'Lato', sans-serif;
+        margin-top: 1.2rem;
+        box-shadow: 0 6px 20px var(--pink-glow);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+
+    .btn-place-order:hover { transform: translateY(-2px); box-shadow: 0 10px 30px var(--pink-glow); }
+
+    /* Secure badges */
+    .secure-badges {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .secure-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.7rem;
+        color: var(--text-muted);
+    }
+
+    @media (max-width: 768px) {
+        .checkout-layout { grid-template-columns: 1fr; }
+        .order-summary { position: static; }
+        .payment-grid { grid-template-columns: repeat(3, 1fr); }
+        .checkout-wrapper { padding: 1rem; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkout-wrapper">
+
+    <div class="page-header">
+        <a href="{{ url_for('shop.cart') }}" style="display:flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:12px;background:var(--bg-card);border:1px solid var(--border);color:var(--text-secondary);text-decoration:none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        </a>
+        <h1>Checkout 🛍️</h1>
+    </div>
+
+    <form method="POST" action="{{ url_for('order.process_checkout') }}" id="checkoutForm">
+        <input type="hidden" name="voucher_id" id="voucherIdInput">
+        <input type="hidden" name="discount" id="discountInput" value="0">
+
+        <div class="checkout-layout">
+
+            <!-- Kiri -->
+            <div>
+
+                <!-- Alamat -->
+                <div class="form-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        Alamat Pengiriman
+                    </h3>
+                    <div class="form-group">
+                        <label>Nama Penerima</label>
+                        <input type="text" name="receiver_name" value="{{ current_user.username }}" placeholder="Nama lengkap penerima" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Nomor HP</label>
+                        <input type="text" name="receiver_phone" value="{{ current_user.phone or '' }}" placeholder="08xxxxxxxxxx" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Alamat Lengkap</label>
+                        <textarea name="address" rows="3" placeholder="Jl. Nama Jalan No. XX, Kelurahan, Kecamatan, Kota, Provinsi, Kode Pos" required>{{ current_user.address or '' }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Catatan untuk Kurir (opsional)</label>
+                        <input type="text" name="notes" placeholder="Contoh: Titip di depan pintu, hubungi dulu sebelum kirim">
+                    </div>
+                </div>
+
+                <!-- Metode Pembayaran -->
+                <div class="form-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        Metode Pembayaran
+                    </h3>
+
+                    <div class="payment-grid">
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="gopay" value="gopay" checked>
+                            <label class="payment-label" for="gopay">
+                                <span class="payment-icon">💚</span>GoPay
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="ovo" value="ovo">
+                            <label class="payment-label" for="ovo">
+                                <span class="payment-icon">💜</span>OVO
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="dana" value="dana">
+                            <label class="payment-label" for="dana">
+                                <span class="payment-icon">💙</span>DANA
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="shopeepay" value="shopeepay">
+                            <label class="payment-label" for="shopeepay">
+                                <span class="payment-icon">🧡</span>ShopeePay
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="linkaja" value="linkaja">
+                            <label class="payment-label" for="linkaja">
+                                <span class="payment-icon">❤️</span>LinkAja
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="qris" value="qris">
+                            <label class="payment-label" for="qris">
+                                <span class="payment-icon">📱</span>QRIS
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="bca" value="bca">
+                            <label class="payment-label" for="bca">
+                                <span class="payment-icon">🏦</span>BCA
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="mandiri" value="mandiri">
+                            <label class="payment-label" for="mandiri">
+                                <span class="payment-icon">🏦</span>Mandiri
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="bni" value="bni">
+                            <label class="payment-label" for="bni">
+                                <span class="payment-icon">🏦</span>BNI
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="bri" value="bri">
+                            <label class="payment-label" for="bri">
+                                <span class="payment-icon">🏦</span>BRI
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="visa" value="visa">
+                            <label class="payment-label" for="visa">
+                                <span class="payment-icon">💳</span>Visa/MC
+                            </label>
+                        </div>
+                        <div class="payment-option">
+                            <input type="radio" name="payment_method" id="cod" value="cod">
+                            <label class="payment-label" for="cod">
+                                <span class="payment-icon">💵</span>COD
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- COD info -->
+                    <div id="codInfo" style="display:none;margin-top:0.8rem;padding:0.8rem;background:rgba(64,145,108,0.1);border:1px solid rgba(64,145,108,0.3);border-radius:10px;font-size:0.82rem;color:#40916c;">
+                        ✅ Bayar tunai saat barang tiba di alamatmu
+                    </div>
+
+                    <input type="hidden" name="is_cod" id="isCod" value="false">
+                </div>
+
+                <!-- Voucher -->
+                <div class="form-card">
+                    <h3>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--pink)" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+                        Voucher & Promo
+                    </h3>
+                    <div class="voucher-input-row">
+                        <input type="text" id="voucherCode" placeholder="Masukkan kode voucher..." style="text-transform:uppercase;">
+                        <button type="button" class="btn-apply-voucher" onclick="applyVoucher()">Pakai</button>
+                    </div>
+                    <div class="voucher-result" id="voucherResult"></div>
+
+                    <!-- Voucher tersedia -->
+                    <div style="margin-top:1rem;">
+                        <p style="font-size:0.75rem;color:var(--text-muted);margin-bottom:0.5rem;">Voucher Tersedia:</p>
+                        <div style="display:flex;flex-direction:column;gap:0.5rem;">
+                            <div onclick="useVoucher('VALENTINE10')" style="padding:0.7rem 1rem;background:rgba(255,45,120,0.08);border:1px dashed rgba(255,45,120,0.3);border-radius:10px;cursor:pointer;transition:all 0.3s ease;" onmouseover="this.style.background='rgba(255,45,120,0.15)'" onmouseout="this.style.background='rgba(255,45,120,0.08)'">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <div>
+                                        <p style="font-size:0.85rem;font-weight:700;color:var(--pink);">VALENTINE10</p>
+                                        <p style="font-size:0.72rem;color:var(--text-muted);">Diskon 10% maks Rp 50.000 • Min. Rp 100.000</p>
+                                    </div>
+                                    <span style="font-size:0.72rem;color:var(--pink);font-weight:700;">Pakai →</span>
+                                </div>
+                            </div>
+                            <div onclick="useVoucher('FREESHIP')" style="padding:0.7rem 1rem;background:rgba(64,145,108,0.08);border:1px dashed rgba(64,145,108,0.3);border-radius:10px;cursor:pointer;transition:all 0.3s ease;" onmouseover="this.style.background='rgba(64,145,108,0.15)'" onmouseout="this.style.background='rgba(64,145,108,0.08)'">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <div>
+                                        <p style="font-size:0.85rem;font-weight:700;color:#40916c;">FREESHIP</p>
+                                        <p style="font-size:0.72rem;color:var(--text-muted);">Gratis Ongkir • Min. Rp 50.000</p>
+                                    </div>
+                                    <span style="font-size:0.72rem;color:#40916c;font-weight:700;">Pakai →</span>
+                                </div>
+                            </div>
+                            <div onclick="useVoucher('LOVE50')" style="padding:0.7rem 1rem;background:rgba(255,193,7,0.08);border:1px dashed rgba(255,193,7,0.3);border-radius:10px;cursor:pointer;transition:all 0.3s ease;" onmouseover="this.style.background='rgba(255,193,7,0.15)'" onmouseout="this.style.background='rgba(255,193,7,0.08)'">
+                                <div style="display:flex;justify-content:space-between;align-items:center;">
+                                    <div>
+                                        <p style="font-size:0.85rem;font-weight:700;color:#ffd700;">LOVE50</p>
+                                        <p style="font-size:0.72rem;color:var(--text-muted);">Cashback Rp 50.000 • Min. Rp 300.000</p>
+                                    </div>
+                                    <span style="font-size:0.72rem;color:#ffd700;font-weight:700;">Pakai →</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Kanan — Summary -->
+            <div class="order-summary">
+                <h3>📋 Ringkasan Pesanan</h3>
+
+                {% for item in cart_items %}
+                <div class="summary-item">
+                    <div class="summary-item-img">
+                        {% if item.product.image and item.product.image != 'default_product.jpg' %}
+                            <img src="{{ url_for('static', filename='uploads/products/' + item.product.image) }}" alt="">
+                        {% else %}🎁{% endif %}
+                    </div>
+                    <div class="summary-item-info">
+                        <p class="summary-item-name">{{ item.product.name }}</p>
+                        <p class="summary-item-qty">x{{ item.quantity }}</p>
+                        {% if item.product.discount_percent > 0 %}
+                        <p style="font-size:0.7rem;color:#40916c;">Hemat {{ item.product.discount_percent }}%</p>
+                        {% endif %}
+                    </div>
+                    <p class="summary-item-price">Rp {{ "{:,.0f}".format(item.product.final_price * item.quantity) }}</p>
+                </div>
+                {% endfor %}
+
+                <div class="summary-divider"></div>
+
+                <div class="summary-row">
+                    <span>Subtotal</span>
+                    <span>Rp {{ "{:,.0f}".format(total) }}</span>
+                </div>
+                <div class="summary-row">
+                    <span>Ongkos Kirim</span>
+                    <span style="color:#40916c;">Gratis 🎉</span>
+                </div>
+                <div class="summary-row discount" id="discountRow" style="display:none;">
+                    <span>Diskon Voucher</span>
+                    <span id="discountDisplay">- Rp 0</span>
+                </div>
+
+                <div class="summary-total">
+                    <span>Total Bayar</span>
+                    <span id="totalDisplay">Rp {{ "{:,.0f}".format(total) }}</span>
+                </div>
+
+                <button type="submit" class="btn-place-order" id="placeOrderBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Buat Pesanan
+                </button>
+
+                <div class="secure-badges">
+                    <div class="secure-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        Transaksi Aman
+                    </div>
+                    <div class="secure-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                        Terpercaya
+                    </div>
+                    <div class="secure-badge">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        SSL Encrypted
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const subtotal = {{ total }};
+    let currentDiscount = 0;
+    let currentVoucherId = null;
+
+    // COD detection
+    document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const isCod = this.value === 'cod';
+            document.getElementById('isCod').value = isCod ? 'true' : 'false';
+            document.getElementById('codInfo').style.display = isCod ? 'block' : 'none';
+        });
+    });
+
+    // Voucher
+    function useVoucher(code) {
+        document.getElementById('voucherCode').value = code;
+        applyVoucher();
+    }
+
+    function applyVoucher() {
+        const code = document.getElementById('voucherCode').value.trim().toUpperCase();
+        if (!code) return;
+
+        fetch('/voucher/check', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code, total: subtotal })
+        })
+        .then(r => r.json())
+        .then(d => {
+            const resultEl = document.getElementById('voucherResult');
+            if (d.success) {
+                currentDiscount = d.discount;
+                currentVoucherId = d.voucher_id;
+                document.getElementById('voucherIdInput').value = d.voucher_id;
+                document.getElementById('discountInput').value = d.discount;
+
+                const newTotal = Math.max(0, subtotal - d.discount);
+                document.getElementById('discountRow').style.display = 'flex';
+                document.getElementById('discountDisplay').textContent = `- Rp ${formatNum(d.discount)}`;
+                document.getElementById('totalDisplay').textContent = `Rp ${formatNum(newTotal)}`;
+
+                resultEl.className = 'voucher-result success';
+                resultEl.textContent = '✅ ' + d.message;
+            } else {
+                resultEl.className = 'voucher-result error';
+                resultEl.textContent = '❌ ' + d.message;
+            }
+        });
+    }
+
+    function formatNum(n) {
+        return Math.round(n).toLocaleString('id-ID');
+    }
+
+    // Validate before submit
+    document.getElementById('checkoutForm').addEventListener('submit', function(e) {
+        const address = document.querySelector('textarea[name="address"]').value.trim();
+        const phone = document.querySelector('input[name="receiver_phone"]').value.trim();
+
+        if (!address) {
+            e.preventDefault();
+            alert('Alamat pengiriman harus diisi!');
+            return;
+        }
+
+        if (!phone) {
+            e.preventDefault();
+            alert('Nomor HP harus diisi!');
+            return;
+        }
+
+        const btn = document.getElementById('placeOrderBtn');
+        btn.textContent = 'Memproses...';
+        btn.disabled = true;
+    });
+</script>
+{% endblock %}

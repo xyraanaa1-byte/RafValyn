@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masuk — RafValyn 🌹</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0a0005; min-height: 100vh; font-family: 'Lato', sans-serif; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .bg-gradient { position: fixed; inset: 0; background: radial-gradient(ellipse at 20% 50%, #3d0020 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, #1a0010 0%, transparent 50%), #0a0005; z-index: 0; }
+        .particles { position: fixed; inset: 0; z-index: 1; pointer-events: none; }
+        .particle { position: absolute; animation: floatUp linear infinite; opacity: 0; }
+        @keyframes floatUp { 0% { transform: translateY(110vh) translateX(0) rotate(0deg) scale(0.5); opacity: 0; } 10% { opacity: 0.6; } 90% { opacity: 0.4; } 100% { transform: translateY(-10vh) translateX(var(--drift)) rotate(360deg) scale(1); opacity: 0; } }
+        .card { position: relative; z-index: 10; background: rgba(255,255,255,0.04); backdrop-filter: blur(20px); border: 1px solid rgba(255,107,138,0.2); border-radius: 24px; padding: 2.5rem; width: 100%; max-width: 420px; margin: 1rem; animation: fadeIn 0.8s ease forwards; box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 40px rgba(255,51,102,0.1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .logo { text-align: center; margin-bottom: 1.5rem; }
+        .logo a { font-family: 'Playfair Display', serif; font-size: 1.8rem; color: white; text-decoration: none; }
+        .logo a span { color: #ff6b8a; font-style: italic; }
+        .logo-sub { font-size: 0.8rem; color: rgba(255,255,255,0.4); letter-spacing: 3px; text-transform: uppercase; margin-top: 0.3rem; }
+        .divider { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.5rem; opacity: 0.3; }
+        .divider-line { flex: 1; height: 1px; background: linear-gradient(90deg, transparent, #ff6b8a, transparent); }
+        .divider-icon { color: #ff6b8a; font-size: 0.8rem; }
+        h2 { font-family: 'Playfair Display', serif; font-size: 1.6rem; color: white; text-align: center; margin-bottom: 0.3rem; }
+        .subtitle { text-align: center; color: rgba(255,255,255,0.4); font-size: 0.85rem; margin-bottom: 1.8rem; }
+        .alert { padding: 0.75rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.85rem; }
+        .alert-danger { background: rgba(255,51,102,0.15); border: 1px solid rgba(255,51,102,0.3); color: #ff8fab; }
+        .alert-success { background: rgba(40,167,69,0.15); border: 1px solid rgba(40,167,69,0.3); color: #75d89a; }
+        .alert-warning { background: rgba(255,193,7,0.15); border: 1px solid rgba(255,193,7,0.3); color: #ffd85c; }
+        .form-group { margin-bottom: 1.2rem; }
+        label { display: block; font-size: 0.8rem; color: rgba(255,255,255,0.5); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .input-wrapper { position: relative; }
+        .input-icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: rgba(255,107,138,0.5); display: flex; align-items: center; }
+        .eye-icon { position: absolute; right: 1rem; top: 50%; transform: translateY(-50%); cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; }
+        .eye-icon:hover svg { stroke: #ff6b8a; }
+        input[type="email"], input[type="password"], input[type="text"] { width: 100%; padding: 0.85rem 2.8rem; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,107,138,0.2); border-radius: 12px; color: white; font-size: 0.95rem; font-family: 'Lato', sans-serif; transition: all 0.3s ease; outline: none; }
+        input:focus { border-color: rgba(255,107,138,0.6); background: rgba(255,255,255,0.08); box-shadow: 0 0 20px rgba(255,51,102,0.15); }
+        input::placeholder { color: rgba(255,255,255,0.2); }
+        .forgot { text-align: right; margin-top: 0.4rem; }
+        .forgot a { font-size: 0.8rem; color: rgba(255,107,138,0.6); text-decoration: none; }
+        .forgot a:hover { color: #ff6b8a; }
+        .btn-login { width: 100%; padding: 0.9rem; background: linear-gradient(135deg, #ff6b8a, #ff3366); border: none; border-radius: 12px; color: white; font-size: 1rem; font-family: 'Lato', sans-serif; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s ease; margin-top: 0.5rem; box-shadow: 0 8px 25px rgba(255,51,102,0.35); }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(255,51,102,0.5); }
+        .or-divider { display: flex; align-items: center; gap: 1rem; margin: 1.5rem 0; }
+        .or-line { flex: 1; height: 1px; background: rgba(255,255,255,0.1); }
+        .or-text { color: rgba(255,255,255,0.3); font-size: 0.8rem; }
+        .btn-register { display: block; width: 100%; padding: 0.85rem; background: transparent; border: 1px solid rgba(255,107,138,0.3); border-radius: 12px; color: rgba(255,255,255,0.6); font-size: 0.9rem; font-family: 'Lato', sans-serif; letter-spacing: 1px; text-align: center; text-decoration: none; transition: all 0.3s ease; }
+        .btn-register:hover { background: rgba(255,107,138,0.1); color: white; border-color: rgba(255,107,138,0.6); text-decoration: none; }
+        .card-footer { text-align: center; margin-top: 1.5rem; }
+        .card-footer a { color: rgba(255,107,138,0.7); text-decoration: none; font-size: 0.85rem; }
+        .card-footer a:hover { color: #ff6b8a; }
+        @media (max-width: 480px) { .card { padding: 2rem 1.5rem; } h2 { font-size: 1.4rem; } }
+    </style>
+</head>
+<body>
+    <div class="bg-gradient"></div>
+    <div class="particles" id="particles"></div>
+    <div class="card">
+        <div class="logo">
+            <a href="{{ url_for('auth.welcome') }}">Raf<span>Valyn</span></a>
+            <p class="logo-sub">Rayakan Cintamu</p>
+        </div>
+        <div class="divider">
+            <div class="divider-line"></div>
+            <span class="divider-icon">♥</span>
+            <div class="divider-line"></div>
+        </div>
+        <h2>Selamat Datang</h2>
+        <p class="subtitle">Masuk untuk melanjutkan</p>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="form-group">
+                <label>Email</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,138,0.6)" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                    </span>
+                    <input type="email" name="email" placeholder="emailkamu@gmail.com" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <span class="input-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,138,0.6)" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </span>
+                    <input type="password" name="password" id="password" placeholder="••••••••" required>
+                    <span class="eye-icon" onclick="togglePassword('password', this)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,138,0.5)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </span>
+                </div>
+                <div class="forgot">
+                    <a href="#">Lupa password?</a>
+                </div>
+            </div>
+            <button type="submit" class="btn-login">Masuk</button>
+        </form>
+
+        <div class="or-divider">
+            <div class="or-line"></div>
+            <span class="or-text">atau</span>
+            <div class="or-line"></div>
+        </div>
+
+        <a href="{{ url_for('auth.register') }}" class="btn-register">Belum punya akun? Daftar Gratis</a>
+
+        <div class="card-footer">
+            <a href="{{ url_for('auth.welcome') }}">← Kembali ke Beranda</a>
+        </div>
+    </div>
+
+    <script>
+        const particles = document.getElementById('particles');
+        const colors = ['#ff6b8a','#ff3366','#ffb3c1','#ff8fab','#ffc2d1'];
+        const shapes = [
+            `<svg viewBox="0 0 32 29.6" xmlns="http://www.w3.org/2000/svg"><path d="M16,28.261C4.841,28.261,0,19.077,0,13.543C0,6.076,5.543,0,12.369,0C14.5,0,16,1.5,16,1.5S17.5,0,19.631,0C26.457,0,32,6.076,32,13.543C32,19.077,27.159,28.261,16,28.261z" fill="currentColor"/></svg>`,
+            `<svg viewBox="0 0 51 48" xmlns="http://www.w3.org/2000/svg"><path d="M25 1l6 17h18L35 29l5 17-15-10-15 10 5-17L1 18h18z" fill="currentColor"/></svg>`
+        ];
+        function createParticle() {
+            const wrapper = document.createElement('div');
+            wrapper.classList.add('particle');
+            const inner = document.createElement('div');
+            inner.style.cssText = `width:100%;height:100%;color:${colors[Math.floor(Math.random()*colors.length)]};filter:drop-shadow(0 0 4px currentColor);`;
+            inner.innerHTML = shapes[Math.floor(Math.random()*shapes.length)];
+            wrapper.appendChild(inner);
+            const size = 10 + Math.random() * 16;
+            wrapper.style.cssText = `position:absolute;left:${Math.random()*100}%;width:${size}px;height:${size}px;--drift:${(Math.random()-0.5)*200}px;animation:floatUp ${7+Math.random()*8}s ${Math.random()*4}s linear infinite;opacity:0;`;
+            particles.appendChild(wrapper);
+            setTimeout(() => wrapper.remove(), 15000);
+        }
+        for(let i = 0; i < 15; i++) createParticle();
+        setInterval(createParticle, 500);
+
+        function togglePassword(fieldId, eyeIcon) {
+            const input = document.getElementById(fieldId);
+            const isPassword = input.type === 'password';
+            input.type = isPassword ? 'text' : 'password';
+            eyeIcon.innerHTML = isPassword
+                ? `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,138,0.8)" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`
+                : `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(255,107,138,0.5)" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`;
+        }
+    </script>
+</body>
+</html>
